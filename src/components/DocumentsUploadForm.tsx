@@ -42,15 +42,15 @@ const DocumentsUploadForm = ({
     }
 
     return (
-        <div className="space-y-6 mt-20 w-64 sm:w-80 lg:w-96 xl:w-110">
+        <div className="space-y-6 mt-20 w-64 sm:w-80 lg:w-96 xl:w-110 mx-auto">
             {isReadyApplication && (
-                <h2 className="text-lg xl:text-xl font-semibold">
+                <h2 className="text-lg xl:text-xl font-semibold text-center">
                     Перечень документов, которые необходимо прикрепить для
                     отправки заявления
                 </h2>
             )}
             {!isReadyApplication && (
-                <h2 className="text-lg xl:text-xl font-semibold">
+                <h2 className="text-lg xl:text-xl font-semibold text-center">
                     Перечень документов, которые необходимо прикрепить для
                     получения ТУ
                 </h2>

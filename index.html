@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="ru">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
@@ -7,7 +7,43 @@
     <title>rvdk-statement</title>
   </head>
   <body>
+    <!-- Сообщение об устаревшем браузере (показывается через JS) -->
+    <div id="browser-upgrade" class="browser-upgrade">
+      Ваш браузер устарел. Для корректной работы портала рекомендуем 
+      <a href="https://browsehappy.com/" target="_blank" rel="noopener">обновить браузер</a>.
+    </div>
+    
+    <!-- Fallback если JavaScript отключен -->
+    <noscript>
+      <div class="no-js-message">
+        <h1>Для работы портала необходим JavaScript</h1>
+        <p>Пожалуйста, включите JavaScript в настройках браузера и обновите страницу.</p>
+      </div>
+    </noscript>
+    
     <div id="root"></div>
+    
+    <!-- Основной скрипт (для современных браузеров) -->
     <script type="module" src="/src/main.tsx"></script>
+    
+    <!-- Скрипт проверки поддержки браузера -->
+    <script>
+      (function() {
+        // Проверяем поддержку современных функций
+        var isModernBrowser = 
+          'fetch' in window &&
+          'Promise' in window &&
+          'assign' in Object &&
+          'includes' in Array.prototype;
+        
+        // Показываем предупреждение для очень старых браузеров
+        if (!isModernBrowser) {
+          var upgradeEl = document.getElementById('browser-upgrade');
+          if (upgradeEl) {
+            upgradeEl.style.display = 'block';
+          }
+        }
+      })();
+    </script>
   </body>
 </html>

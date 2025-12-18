@@ -193,9 +193,9 @@ function App() {
 
     // Форма заявки (единая для ТУ и ДП)
     return (
-        <form className="min-h-screen max-w-6xl mx-auto px-4 py-6 sm:px-6 sm:py-8">
+        <form className="min-h-screen max-w-6xl mx-auto px-4 py-6 sm:px-6 sm:py-8 flex flex-col items-center">
             {/* Заголовок и навигация */}
-            <div className="mb-6">
+            <div className="mb-6 w-full max-w-md text-center">
                 {!isReadyApplication && (
                     <Button
                         type="button"
@@ -215,29 +215,31 @@ function App() {
 
             {/* Шаг 1: Выбор услуги */}
             {!isReadyApplication && (
-                <Field className="mt-5 w-64 sm:w-80 lg:w-96 xl:w-110">
-                    <FieldLabel className="xl:text-lg">
-                        Услуги подключения
-                    </FieldLabel>
-                    <Select
-                        value={selectedServiceId}
-                        onValueChange={handleServiceSelect}
-                    >
-                        <SelectTrigger>
-                            <SelectValue placeholder="Выберите услугу" />
-                        </SelectTrigger>
-                        <SelectContent className="w-64 sm:w-80 lg:w-96 xl:w-110">
-                            {services.map(({ name, id }) => (
-                                <SelectItem key={id} value={`${id}`}>
-                                    {name}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                    <FieldDescription>
-                        Выберите необходимую вам услугу
-                    </FieldDescription>
-                </Field>
+                <div className="w-full flex flex-col items-center">
+                    <Field className="mt-5 w-64 sm:w-80 lg:w-96 xl:w-110">
+                        <FieldLabel className="xl:text-lg">
+                            Услуги подключения
+                        </FieldLabel>
+                        <Select
+                            value={selectedServiceId}
+                            onValueChange={handleServiceSelect}
+                        >
+                            <SelectTrigger>
+                                <SelectValue placeholder="Выберите услугу" />
+                            </SelectTrigger>
+                            <SelectContent className="w-64 sm:w-80 lg:w-96 xl:w-110">
+                                {services.map(({ name, id }) => (
+                                    <SelectItem key={id} value={`${id}`}>
+                                        {name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                        <FieldDescription>
+                            Выберите необходимую вам услугу
+                        </FieldDescription>
+                    </Field>
+                </div>
             )}
 
             {/* Детали услуги */}

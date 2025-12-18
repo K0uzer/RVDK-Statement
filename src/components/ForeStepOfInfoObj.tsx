@@ -35,8 +35,8 @@ const ForeStepOfInfoObj = ({
     const [isWaterDisposal, setIsWaterDisposal] = useState(false)
 
     return (
-        <div className="space-y-3 mt-20 w-64 pb-10 border-b sm:w-80 lg:w-96 xl:w-110">
-            <h2 className="text-lg font-semibold">
+        <div className="space-y-3 mt-20 w-64 pb-10 border-b sm:w-80 lg:w-96 xl:w-110 mx-auto">
+            <h2 className="text-lg font-semibold text-center">
                 Информация о подключаемом объекте
             </h2>
             {/* Тех. условия */}

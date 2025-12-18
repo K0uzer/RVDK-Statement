@@ -75,6 +75,11 @@ export function ServiceCheckboxGroup({
 }: ServiceCheckboxGroupProps) {
     return (
         <div className={cn('flex flex-col gap-3', className)}>
+            {title && (
+                <h3 className="font-medium text-sm text-muted-foreground">
+                    {title}
+                </h3>
+            )}
             {options.map((option) => (
                 <ServiceCheckbox
                     key={option.id}

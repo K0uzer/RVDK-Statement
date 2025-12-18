@@ -6,8 +6,11 @@
     "scripts": {
         "dev": "vite",
         "build": "tsc -b && vite build",
+        "build:legacy": "tsc -b && cross-env LEGACY_BUILD=true vite build",
+        "build:analyze": "tsc -b && vite build --mode analyze",
         "lint": "eslint .",
-        "preview": "vite preview"
+        "preview": "vite preview",
+        "preview:legacy": "cross-env LEGACY_BUILD=true vite preview"
     },
     "dependencies": {
         "@files-ui/react": "1.2.5",
@@ -67,12 +70,15 @@
         "@types/node": "24.6.0",
         "@types/react": "19.1.16",
         "@types/react-dom": "19.1.9",
+        "@vitejs/plugin-legacy": "^7.2.1",
         "@vitejs/plugin-react": "5.0.4",
         "babel-plugin-react-compiler": "19.1.0-rc.3",
+        "cross-env": "^10.1.0",
         "eslint": "9.38.0",
         "eslint-plugin-react-hooks": "5.2.0",
         "eslint-plugin-react-refresh": "0.4.22",
         "globals": "16.4.0",
+        "terser": "^5.44.1",
         "typescript": "~5.9.3",
         "typescript-eslint": "8.45.0",
         "vite": "7.1.7"

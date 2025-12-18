@@ -1,5 +1,5 @@
 import { Dispatch, SetStateAction, useState } from 'react'
-import { AccordionT } from '@/App'
+import type { AccordionT } from '@/types'
 import {
     Accordion,
     AccordionContent,
@@ -27,14 +27,14 @@ const TwoStepOfAccordion = ({
     }
 
     return (
-        <div className="space-y-3 border-b border-t pt-10 pb-10">
-            <h2 className="text-lg xl:text-xl font-semibold">
+        <div className="space-y-3 border-b border-t pt-10 pb-10 w-64 sm:w-80 lg:w-96 xl:w-110 mx-auto">
+            <h2 className="text-lg xl:text-xl font-semibold text-center">
                 Основание обращения
             </h2>
             {accordion.map(({ id, name }) => (
                 <div
                     key={id}
-                    className="flex items-start gap-3 w-64 sm:w-80 lg:w-96 xl:w-110"
+                    className="flex items-start gap-3 w-full"
                 >
                     <Checkbox
                         id={`checkbox-${id}`}

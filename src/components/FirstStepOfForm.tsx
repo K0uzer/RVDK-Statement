@@ -133,7 +133,7 @@ export function FirstStepOfForm({
     const serviceName = selectedService.name
 
     return (
-        <div className="mt-10 w-64 sm:w-80 lg:w-96 xl:w-110 pb-10">
+        <div className="mt-10 w-64 sm:w-80 lg:w-96 xl:w-110 pb-10 mx-auto text-center">
             {/* Новое подключение */}
             {serviceName === SERVICE_TITLES.NEW_CONNECTION && (
                 <Field className="mt-5 w-full border-b-0">

@@ -17,7 +17,7 @@ const ThreeStepOfGroupButton = ({
     setIsSelectedThreeStep,
 }: ThreeStepOfGroupButtonProps) => {
     return (
-        <div className="w-64 text-center mt-10 pb-10 border-b sm:w-80 lg:w-96 xl:w-110">
+        <div className="w-64 text-center mt-10 pb-10 border-b sm:w-80 lg:w-96 xl:w-110 mx-auto">
             <h2 className="text-lg xl:text-xl font-semibold lg:pb-6 xl:pd-7">
                 Сведения о лице и контактные данные лиц
             </h2>
