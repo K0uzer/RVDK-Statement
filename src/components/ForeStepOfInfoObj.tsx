@@ -1,16 +1,25 @@
+/**
+ * Шаг 4: Информация о подключаемом объекте
+ * С условной обязательностью полей по выбранной услуге
+ */
+
+import { Dispatch, SetStateAction, useState } from 'react'
 import { Input } from './ui/input'
 import { Field, FieldLabel, FieldDescription } from './ui/field'
 import { Checkbox } from './ui/checkbox'
-import { Dispatch, SetStateAction, useState } from 'react'
+import {
+    getFieldConfig,
+    isFieldRequired,
+    isFieldVisible,
+    SERVICE_TITLES,
+} from '@/constants'
+import type { UpdateFormFn } from '@/utils/form'
 
 interface ObjectInfoFormProps {
     tabsState: string
-    updateCommon: (path: string, value: unknown) => void
+    updateCommon: UpdateFormFn
     setIsSelectedForeStep: Dispatch<SetStateAction<boolean>>
-    showTechConditionsFields?: boolean // подп. 7 или 8 пункта 2
-    showAdjacentOwnerFields?: boolean // подп. 5 пункта 2
-    requireWaterSupplyFields?: boolean // подп. 3 или подп. 10 пункта 2
-    requireFireWaterSupplyFields?: boolean // подп. 2 пункта 2
+    selectedServiceName?: string // Название выбранной услуги
 }
 
 const tabsNames = {
@@ -20,38 +29,71 @@ const tabsNames = {
     gos: 'Орган гос. власти и само упр.',
 }
 
+/**
+ * Компонент метки с опциональной звёздочкой обязательности
+ */
+function RequiredLabel({
+    children,
+    required,
+    className = '',
+}: {
+    children: React.ReactNode
+    required?: boolean
+    className?: string
+}) {
+    return (
+        <FieldLabel className={`mt-3 ${className}`}>
+            {children}
+            {required && <span className="text-red-500 ml-1">*</span>}
+        </FieldLabel>
+    )
+}
+
 const ForeStepOfInfoObj = ({
     tabsState,
     updateCommon,
     setIsSelectedForeStep,
-    // showTechConditionsFields,
-    // showAdjacentOwnerFields,
-    // requireWaterSupplyFields,
-    requireFireWaterSupplyFields,
+    selectedServiceName = '',
 }: ObjectInfoFormProps) => {
     // Хук для подтверждения водоснабжения
     const [isSupply, setIsSupply] = useState(false)
     // Хук для подтверждения водоотведения
     const [isWaterDisposal, setIsWaterDisposal] = useState(false)
 
+    // Получаем конфигурацию полей для выбранной услуги
+    const fieldConfig = getFieldConfig(selectedServiceName)
+
+    // Проверяем, нужно ли показывать поля смежного владельца
+    const showAdjacentOwner = selectedServiceName === SERVICE_TITLES.ADJACENT_OWNER
+
+    // Проверяем, нужно ли показывать поля пожаротушения
+    const showFirefighting =
+        selectedServiceName === SERVICE_TITLES.FIREFIGHTING ||
+        selectedServiceName === SERVICE_TITLES.NEW_CONNECTION
+
+    // Проверяем, нужно ли показывать поля ТУ
+    const showTcFields =
+        selectedServiceName === SERVICE_TITLES.CORRECTION ||
+        selectedServiceName === SERVICE_TITLES.ANNULMENT
+
     return (
         <div className="space-y-3 mt-20 w-64 pb-10 border-b sm:w-80 lg:w-96 xl:w-110 mx-auto">
             <h2 className="text-lg font-semibold text-center">
                 Информация о подключаемом объекте
             </h2>
-            {/* Тех. условия */}
-            {
-                /*showTechConditionsFields */ <Field>
-                    <FieldLabel className="mt-3">
+
+            {/* Технические условия — только для корректировки/аннулирования */}
+            {showTcFields && (
+                <Field>
+                    <RequiredLabel required={isFieldRequired(selectedServiceName, 'tcNumber')}>
                         Технические условия №
-                        <span className="text-red-500">*</span>
-                    </FieldLabel>
+                    </RequiredLabel>
                     <Input
                         onChange={(e) => {
                             updateCommon('objectiveInfo.number', e.target.value)
                         }}
                         placeholder="№ документа"
-                        required
+                        required={isFieldRequired(selectedServiceName, 'tcNumber')}
                     />
                     <Input
                         onChange={(e) => {
@@ -59,12 +101,16 @@ const ForeStepOfInfoObj = ({
                         }}
                         placeholder="от {дата} г."
                         type="date"
-                        required
+                        required={isFieldRequired(selectedServiceName, 'tcDate')}
                     />
                 </Field>
-            }
+            )}
 
+            {/* Основная информация об объекте */}
             <Field>
+                <RequiredLabel required={isFieldRequired(selectedServiceName, 'name')}>
+                    Наименование объекта
+                </RequiredLabel>
                 <Input
                     type="text"
                     onChange={(e) => {
@@ -72,240 +118,290 @@ const ForeStepOfInfoObj = ({
                         setIsSelectedForeStep(true)
                     }}
                     placeholder="Наименование объекта"
+                    required={isFieldRequired(selectedServiceName, 'name')}
                 />
+            </Field>
+
+            <Field>
+                <RequiredLabel required={isFieldRequired(selectedServiceName, 'address')}>
+                    Адрес подключаемого объекта
+                </RequiredLabel>
                 <Input
                     onChange={(e) => {
                         updateCommon('objectiveInfo.address', e.target.value)
                     }}
-                    placeholder="Адрес подключаемого объекта"
+                    placeholder="г. Ростов-на-Дону, ул. ..."
+                    required={isFieldRequired(selectedServiceName, 'address')}
                 />
+            </Field>
+
+            <Field>
+                <RequiredLabel required={isFieldRequired(selectedServiceName, 'cadastralNumber')}>
+                    Кадастровый номер
+                </RequiredLabel>
                 <Input
-                    type="number"
+                    type="text"
                     onChange={(e) => {
-                        updateCommon(
-                            'objectiveInfo.cadastralNumber',
-                            e.target.value,
-                        )
+                        updateCommon('objectiveInfo.cadastralNumber', e.target.value)
                     }}
-                    placeholder="Кадастровый номер"
+                    placeholder="00:00:0000000:0000"
+                    required={isFieldRequired(selectedServiceName, 'cadastralNumber')}
                 />
+            </Field>
+
+            <Field>
+                <RequiredLabel required={isFieldRequired(selectedServiceName, 'area')}>
+                    Площадь земельного участка (м²)
+                </RequiredLabel>
                 <Input
                     type="number"
                     onChange={(e) => {
                         updateCommon('objectiveInfo.area', +e.target.value)
                     }}
-                    placeholder="Площадь земельного участка (м²)"
+                    placeholder="Площадь земельного участка"
+                    min={0}
+                    required={isFieldRequired(selectedServiceName, 'area')}
                 />
             </Field>
 
-            {/* Смежный владелец — подп. 5 п.2 */}
-            {tabsState === tabsNames.ur && (
-                /*showAdjacentOwnerFields */ <>
-                    <Field>
-                        <FieldLabel className="mt-3">
-                            Адрес смежного владельца (юр. лица)
-                        </FieldLabel>
-                        <Input
-                            type="text"
-                            onChange={(e) => {
-                                updateCommon(
-                                    'objectiveInfo.coOwnerLegal.address',
-                                    e.target.value,
-                                )
-                            }}
-                            placeholder="г. Казань, ул. Ленина, д. 1"
-                        />
-                    </Field>
-                    <Field>
-                        <FieldLabel className="mt-3">
-                            Наименование смежного владельца (ФИО/название с ИНН)
-                        </FieldLabel>
-                        <Input
-                            type="text"
-                            onChange={(e) => {
-                                updateCommon(
-                                    'objectiveInfo.coOwnerLegal.name',
-                                    e.target.value,
-                                )
-                            }}
-                            placeholder="Наименование"
-                        />
-                    </Field>
-                    <Field>
-                        <FieldLabel className="mt-3">
-                            Кадастровый номер, адрес участка и ИНН (смежного
-                            владельца)
-                        </FieldLabel>
-                        <Input
-                            onChange={(e) => {
-                                updateCommon(
-                                    'objectiveInfo.coOwnerLegal.cadastralNumber',
-                                    e.target.value,
-                                )
-                            }}
-                            placeholder="Кадастровый номер"
-                        />
-                        <Input
-                            onChange={(e) => {
-                                updateCommon(
-                                    'objectiveInfo.coOwnerLegal.objectiveAddress',
-                                    e.target.value,
-                                )
-                            }}
-                            placeholder="Адрес участка"
-                        />
-                        <Input
-                            onChange={(e) => {
-                                updateCommon(
-                                    'objectiveInfo.coOwnerLegal.inn',
-                                    e.target.value,
-                                )
-                            }}
-                            placeholder="ИНН"
-                        />
-                    </Field>
+            {/* Смежный владелец — только для подпункта 5 */}
+            {showAdjacentOwner && (
+                <>
+                    {/* Для юр. лиц */}
+                    {tabsState === tabsNames.ur && (
+                        <>
+                            <Field>
+                                <RequiredLabel required>
+                                    Адрес смежного владельца
+                                </RequiredLabel>
+                                <Input
+                                    type="text"
+                                    onChange={(e) => {
+                                        updateCommon(
+                                            'objectiveInfo.coOwnerLegal.address',
+                                            e.target.value,
+                                        )
+                                    }}
+                                    placeholder="г. Ростов-на-Дону, ул. ..."
+                                    required
+                                />
+                            </Field>
+                            <Field>
+                                <RequiredLabel required>
+                                    Наименование смежного владельца
+                                </RequiredLabel>
+                                <Input
+                                    type="text"
+                                    onChange={(e) => {
+                                        updateCommon(
+                                            'objectiveInfo.coOwnerLegal.name',
+                                            e.target.value,
+                                        )
+                                    }}
+                                    placeholder="Наименование организации"
+                                    required
+                                />
+                            </Field>
+                            <Field>
+                                <FieldLabel className="mt-3">
+                                    Данные смежного владельца
+                                </FieldLabel>
+                                <Input
+                                    onChange={(e) => {
+                                        updateCommon(
+                                            'objectiveInfo.coOwnerLegal.cadastralNumber',
+                                            e.target.value,
+                                        )
+                                    }}
+                                    placeholder="Кадастровый номер"
+                                />
+                                <Input
+                                    onChange={(e) => {
+                                        updateCommon(
+                                            'objectiveInfo.coOwnerLegal.objectiveAddress',
+                                            e.target.value,
+                                        )
+                                    }}
+                                    placeholder="Адрес участка"
+                                />
+                                <Input
+                                    onChange={(e) => {
+                                        updateCommon(
+                                            'objectiveInfo.coOwnerLegal.inn',
+                                            e.target.value,
+                                        )
+                                    }}
+                                    placeholder="ИНН"
+                                />
+                            </Field>
+                        </>
+                    )}
+
+                    {/* Для физ. лиц */}
+                    {tabsState === tabsNames.fiz && (
+                        <>
+                            <Field>
+                                <RequiredLabel required>
+                                    Адрес смежного владельца
+                                </RequiredLabel>
+                                <Input
+                                    type="text"
+                                    onChange={(e) => {
+                                        updateCommon(
+                                            'objectiveInfo.coOwnerIndividual.address',
+                                            e.target.value,
+                                        )
+                                    }}
+                                    placeholder="г. Ростов-на-Дону, ул. ..."
+                                    required
+                                />
+                            </Field>
+                            <Field>
+                                <RequiredLabel required>
+                                    ФИО смежного владельца
+                                </RequiredLabel>
+                                <Input
+                                    type="text"
+                                    onChange={(e) => {
+                                        const values = e.target.value.split(' ')
+                                        updateCommon(
+                                            'objectiveInfo.coOwnerIndividual.fullName.firstName',
+                                            values[0] || '',
+                                        )
+                                        updateCommon(
+                                            'objectiveInfo.coOwnerIndividual.fullName.middleName',
+                                            values[1] || '',
+                                        )
+                                        updateCommon(
+                                            'objectiveInfo.coOwnerIndividual.fullName.lastName',
+                                            values[2] || '',
+                                        )
+                                    }}
+                                    placeholder="Иванов Иван Иванович"
+                                    required
+                                />
+                            </Field>
+                            <Field>
+                                <FieldLabel className="mt-3">
+                                    Данные участка смежного владельца
+                                </FieldLabel>
+                                <Input
+                                    onChange={(e) => {
+                                        updateCommon(
+                                            'objectiveInfo.coOwnerIndividual.cadastralNumber',
+                                            e.target.value,
+                                        )
+                                    }}
+                                    placeholder="Кадастровый номер"
+                                />
+                                <Input
+                                    onChange={(e) => {
+                                        updateCommon(
+                                            'objectiveInfo.coOwnerIndividual.objectiveAddress',
+                                            e.target.value,
+                                        )
+                                    }}
+                                    placeholder="Адрес участка"
+                                />
+                            </Field>
+                        </>
+                    )}
                 </>
             )}
 
-            {/* Смежный владелец физ.лица */}
-            {tabsState === tabsNames.fiz && (
-                /*showAdjacentOwnerFields */ <>
-                    <Field>
-                        <FieldLabel className="mt-3">
-                            Адрес смежного владельца (физ. лица)
-                        </FieldLabel>
-                        <Input
-                            type="text"
-                            onChange={(e) => {
-                                updateCommon(
-                                    'objectiveInfo.coOwnerIndividual.address',
-                                    e.target.value,
-                                )
-                            }}
-                            placeholder="г. Казань, ул. Ленина, д. 1"
-                        />
-                    </Field>
-                    <Field>
-                        <FieldLabel className="mt-3">
-                            Наименование смежного владельца (ФИО/название)
-                        </FieldLabel>
-                        <Input
-                            type="text"
-                            onChange={(e) => {
-                                const values = e.target.value.split(' ')
-                                updateCommon(
-                                    'objectiveInfo.coOwnerIndividual.fullName.firstName',
-                                    values[0] || '',
-                                )
-                                updateCommon(
-                                    'objectiveInfo.coOwnerIndividual.fullName.middleName',
-                                    values[1] || '',
-                                )
-                                updateCommon(
-                                    'objectiveInfo.coOwnerIndividual.fullName.lastName',
-                                    values[2] || '',
-                                )
-                            }}
-                            placeholder="Наименование"
-                        />
-                    </Field>
-                    <Field>
-                        <FieldLabel className="mt-3">
-                            Кадастровый номер, адрес участка (смежного
-                            владельца)
-                        </FieldLabel>
-                        <Input
-                            onChange={(e) => {
-                                updateCommon(
-                                    'objectiveInfo.coOwnerIndividual.cadastralNumber',
-                                    e.target.value,
-                                )
-                            }}
-                            placeholder="Кадастровый номер"
-                        />
-                        <Input
-                            onChange={(e) => {
-                                updateCommon(
-                                    'objectiveInfo.coOwnerIndividual.objectiveAddress',
-                                    e.target.value,
-                                )
-                            }}
-                            placeholder="Адрес участка"
-                        />
-                    </Field>
-                </>
+            {/* Этажность и высота */}
+            {isFieldVisible(selectedServiceName, 'floors') && (
+                <Field>
+                    <RequiredLabel required={isFieldRequired(selectedServiceName, 'floors')}>
+                        Количество этажей
+                    </RequiredLabel>
+                    <Input
+                        onChange={(e) => {
+                            updateCommon('objectiveInfo.floors', +e.target.value)
+                        }}
+                        placeholder="Количество этажей"
+                        type="number"
+                        min={0}
+                    />
+                </Field>
             )}
 
-            <Field>
-                <FieldLabel className="mt-3">Количество этажей</FieldLabel>
-                <Input
-                    onChange={(e) => {
-                        updateCommon('objectiveInfo.floors', +e.target.value)
-                    }}
-                    placeholder="Количество этажей"
-                    type="number"
-                    min={0}
-                />
-                <Input
-                    onChange={(e) => {
-                        updateCommon('objectiveInfo.height', +e.target.value)
-                    }}
-                    placeholder="Высота объекта (м)"
-                    type="number"
-                    min={0}
-                />
-            </Field>
+            {isFieldVisible(selectedServiceName, 'height') && (
+                <Field>
+                    <RequiredLabel required={isFieldRequired(selectedServiceName, 'height')}>
+                        Высота объекта (м)
+                    </RequiredLabel>
+                    <Input
+                        onChange={(e) => {
+                            updateCommon('objectiveInfo.height', +e.target.value)
+                        }}
+                        placeholder="Высота объекта"
+                        type="number"
+                        min={0}
+                    />
+                </Field>
+            )}
 
-            <Field>
-                <FieldLabel className="mt-3">
-                    Количество квартир (для МКД)
-                </FieldLabel>
-                <Input
-                    onChange={(e) => {
-                        updateCommon('objectiveInfo.flats', +e.target.value)
-                    }}
-                    placeholder="Количество квартир (для МКД)"
-                    type="number"
-                    min={0}
-                />
-            </Field>
-            <Field>
-                <FieldLabel className="mt-3">
-                    Количество жителей (не меньше количества квартир)
-                </FieldLabel>
-                <Input
-                    onChange={(e) => {
-                        updateCommon('objectiveInfo.settlers', +e.target.value)
-                    }}
-                    placeholder="Количество"
-                    type="number"
-                    min={0}
-                />
-                <FieldDescription>
-                    Поле обязательно для МКД, гостиниц
-                </FieldDescription>
-            </Field>
-            <Field>
-                <FieldLabel className="mt-3">
-                    Планируемый срок ввода объекта в эксплуатацию
-                </FieldLabel>
-                <Input
-                    type="date"
-                    onChange={(e) => {
-                        updateCommon(
-                            'objectiveInfo.commissionPlanedOn',
-                            e.target.value,
-                        )
-                    }}
-                />
-            </Field>
+            {/* Квартиры и жители */}
+            {isFieldVisible(selectedServiceName, 'flats') && (
+                <Field>
+                    <RequiredLabel required={isFieldRequired(selectedServiceName, 'flats')}>
+                        Количество квартир (для МКД)
+                    </RequiredLabel>
+                    <Input
+                        onChange={(e) => {
+                            updateCommon('objectiveInfo.flats', +e.target.value)
+                        }}
+                        placeholder="Количество квартир"
+                        type="number"
+                        min={0}
+                    />
+                </Field>
+            )}
 
-            {/* Водоснабжение (обязательно при подп. 3 и 10 п.2) */}
-            {
-                /*requireWaterSupplyFields */ <Field>
-                    <FieldLabel className="mt-3">
-                        Водоснабжение (м³/сутки, м³/час, л/с)
-                    </FieldLabel>
+            {isFieldVisible(selectedServiceName, 'settlers') && (
+                <Field>
+                    <RequiredLabel required={isFieldRequired(selectedServiceName, 'settlers')}>
+                        Количество жителей
+                    </RequiredLabel>
+                    <Input
+                        onChange={(e) => {
+                            updateCommon('objectiveInfo.settlers', +e.target.value)
+                        }}
+                        placeholder="Количество жителей"
+                        type="number"
+                        min={0}
+                    />
+                    <FieldDescription>
+                        Обязательно для МКД, гостиниц
+                    </FieldDescription>
+                </Field>
+            )}
+
+            {/* Срок ввода в эксплуатацию */}
+            {isFieldVisible(selectedServiceName, 'commissionDate') && (
+                <Field>
+                    <RequiredLabel required={isFieldRequired(selectedServiceName, 'commissionDate')}>
+                        Планируемый срок ввода в эксплуатацию
+                    </RequiredLabel>
+                    <Input
+                        type="date"
+                        onChange={(e) => {
+                            updateCommon(
+                                'objectiveInfo.commissionPlanedOn',
+                                e.target.value,
+                            )
+                        }}
+                    />
+                </Field>
+            )}
+
+            {/* Водоснабжение */}
+            <Field>
+                <RequiredLabel required={isFieldRequired(selectedServiceName, 'waterSupplyPerDay')}>
+                    Водоснабжение
+                </RequiredLabel>
+                <div className="grid grid-cols-3 gap-2">
                     <Input
                         onChange={(e) => {
                             updateCommon(
@@ -339,88 +435,110 @@ const ForeStepOfInfoObj = ({
                         type="number"
                         min={0}
                     />
-                </Field>
-            }
+                </div>
+            </Field>
 
-            {/* Пожаротушение (только если требуется) */}
-            {requireFireWaterSupplyFields && (
+            {/* Пожаротушение */}
+            {showFirefighting && (
                 <Field>
-                    <FieldLabel className="mt-3">
+                    <RequiredLabel required={isFieldRequired(selectedServiceName, 'firefightingInner')}>
                         Водоснабжение на нужды пожаротушения (л/с)
-                    </FieldLabel>
-                    <Input
-                        onChange={(e) => {
-                            updateCommon(
-                                'objectiveInfo.supplyVolumeInnerFirefightingPerSecond',
-                                +e.target.value,
-                            )
-                        }}
-                        placeholder="внутреннего"
-                        type="number"
-                        min={0}
-                    />
-                    <Input
-                        onChange={(e) => {
-                            updateCommon(
-                                'objectiveInfo.supplyVolumeAutoFirefightingPerSecond',
-                                +e.target.value,
-                            )
-                        }}
-                        placeholder="автоматического"
-                        type="number"
-                        min={0}
-                    />
-                    <Input
-                        onChange={(e) => {
-                            updateCommon(
-                                'objectiveInfo.supplyVolumeOuterFirefightingPerSecond',
-                                +e.target.value,
-                            )
-                        }}
-                        placeholder="наружного"
-                        type="number"
-                        min={0}
-                    />
+                    </RequiredLabel>
+                    <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                            <span className="text-sm w-28">Внутреннего:</span>
+                            <Input
+                                onChange={(e) => {
+                                    updateCommon(
+                                        'objectiveInfo.supplyVolumeInnerFirefightingPerSecond',
+                                        +e.target.value,
+                                    )
+                                }}
+                                placeholder="л/с"
+                                type="number"
+                                min={0}
+                                className="flex-1"
+                            />
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <span className="text-sm w-28">Автоматического:</span>
+                            <Input
+                                onChange={(e) => {
+                                    updateCommon(
+                                        'objectiveInfo.supplyVolumeAutoFirefightingPerSecond',
+                                        +e.target.value,
+                                    )
+                                }}
+                                placeholder="л/с"
+                                type="number"
+                                min={0}
+                                className="flex-1"
+                            />
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <span className="text-sm w-28">Наружного:</span>
+                            <Input
+                                onChange={(e) => {
+                                    updateCommon(
+                                        'objectiveInfo.supplyVolumeOuterFirefightingPerSecond',
+                                        +e.target.value,
+                                    )
+                                }}
+                                placeholder="л/с"
+                                type="number"
+                                min={0}
+                                className="flex-1"
+                            />
+                        </div>
+                    </div>
+                    {selectedServiceName === SERVICE_TITLES.FIREFIGHTING && (
+                        <FieldDescription className="text-orange-600">
+                            Для услуги «Пожаротушение» все поля обязательны и не могут быть равны нулю
+                        </FieldDescription>
+                    )}
                 </Field>
             )}
 
+            {/* Водоотведение */}
             <Field>
-                <FieldLabel className="mt-3">
-                    Водоотведение (м³/сутки, м³/час, л/с)
-                </FieldLabel>
-                <Input
-                    onChange={(e) => {
-                        updateCommon(
-                            'objectiveInfo.disposalVolumePerDay',
-                            +e.target.value,
-                        )
-                    }}
-                    placeholder="м³/сутки"
-                    type="number"
-                    min={0}
-                />
-                <Input
-                    onChange={(e) => {
-                        updateCommon(
-                            'objectiveInfo.disposalVolumePerHour',
-                            +e.target.value,
-                        )
-                    }}
-                    placeholder="м³/час"
-                    type="number"
-                    min={0}
-                />
-                <Input
-                    onChange={(e) => {
-                        updateCommon(
-                            'objectiveInfo.disposalVolumePerSecond',
-                            +e.target.value,
-                        )
-                    }}
-                    placeholder="л/с"
-                    type="number"
-                    min={0}
-                />
+                <RequiredLabel required={isFieldRequired(selectedServiceName, 'waterDisposalPerDay')}>
+                    Водоотведение
+                </RequiredLabel>
+                <div className="grid grid-cols-3 gap-2">
+                    <Input
+                        onChange={(e) => {
+                            updateCommon(
+                                'objectiveInfo.disposalVolumePerDay',
+                                +e.target.value,
+                            )
+                        }}
+                        placeholder="м³/сутки"
+                        type="number"
+                        min={0}
+                    />
+                    <Input
+                        onChange={(e) => {
+                            updateCommon(
+                                'objectiveInfo.disposalVolumePerHour',
+                                +e.target.value,
+                            )
+                        }}
+                        placeholder="м³/час"
+                        type="number"
+                        min={0}
+                    />
+                    <Input
+                        onChange={(e) => {
+                            updateCommon(
+                                'objectiveInfo.disposalVolumePerSecond',
+                                +e.target.value,
+                            )
+                        }}
+                        placeholder="л/с"
+                        type="number"
+                        min={0}
+                    />
+                </div>
             </Field>
 
             {/* Признаки подключения */}
@@ -429,56 +547,58 @@ const ForeStepOfInfoObj = ({
                     Объект присоединен к сетям водоснабжения?
                 </FieldLabel>
                 <div className="flex gap-4">
-                    <Checkbox
-                        checked={isSupply}
-                        onClick={() => {
-                            updateCommon('objectiveInfo.hasWaterSupply', true)
-                            setIsSupply(!isSupply)
-                        }}
-                        id="waterSupplyYes"
-                    />
-                    <label htmlFor="waterSupplyYes" className="mr-3">
-                        Да
-                    </label>
-                    <Checkbox
-                        checked={!isSupply}
-                        onClick={() => {
-                            updateCommon('objectiveInfo.hasWaterSupply', false)
-                            setIsSupply(!isSupply)
-                        }}
-                        id="waterSupplyNo"
-                    />
-                    <label htmlFor="waterSupplyNo">Нет</label>
+                    <div className="flex items-center gap-2">
+                        <Checkbox
+                            checked={isSupply}
+                            onCheckedChange={() => {
+                                updateCommon('objectiveInfo.hasWaterSupply', !isSupply)
+                                setIsSupply(!isSupply)
+                            }}
+                            id="waterSupplyYes"
+                        />
+                        <label htmlFor="waterSupplyYes">Да</label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <Checkbox
+                            checked={!isSupply}
+                            onCheckedChange={() => {
+                                updateCommon('objectiveInfo.hasWaterSupply', isSupply)
+                                setIsSupply(!isSupply)
+                            }}
+                            id="waterSupplyNo"
+                        />
+                        <label htmlFor="waterSupplyNo">Нет</label>
+                    </div>
                 </div>
             </Field>
+
             <Field>
                 <FieldLabel className="mt-3">
                     Объект присоединен к сетям водоотведения?
                 </FieldLabel>
                 <div className="flex gap-4">
-                    <Checkbox
-                        checked={isWaterDisposal}
-                        onClick={() => {
-                            updateCommon('objectiveInfo.hasWaterDisposal', true)
-                            setIsWaterDisposal(!isWaterDisposal)
-                        }}
-                        id="sewerYes"
-                    />
-                    <label htmlFor="sewerYes" className="mr-3">
-                        Да
-                    </label>
-                    <Checkbox
-                        checked={!isWaterDisposal}
-                        onClick={() => {
-                            updateCommon(
-                                'objectiveInfo.hasWaterDisposal',
-                                false,
-                            )
-                            setIsWaterDisposal(!isWaterDisposal)
-                        }}
-                        id="sewerNo"
-                    />
-                    <label htmlFor="sewerNo">Нет</label>
+                    <div className="flex items-center gap-2">
+                        <Checkbox
+                            checked={isWaterDisposal}
+                            onCheckedChange={() => {
+                                updateCommon('objectiveInfo.hasWaterDisposal', !isWaterDisposal)
+                                setIsWaterDisposal(!isWaterDisposal)
+                            }}
+                            id="sewerYes"
+                        />
+                        <label htmlFor="sewerYes">Да</label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <Checkbox
+                            checked={!isWaterDisposal}
+                            onCheckedChange={() => {
+                                updateCommon('objectiveInfo.hasWaterDisposal', isWaterDisposal)
+                                setIsWaterDisposal(!isWaterDisposal)
+                            }}
+                            id="sewerNo"
+                        />
+                        <label htmlFor="sewerNo">Нет</label>
+                    </div>
                 </div>
             </Field>
         </div>

@@ -1,25 +1,47 @@
+/**
+ * Шаг 5: Загрузка документов
+ * С разделением списков для ТУ и ДП
+ */
+
 import { useState } from 'react'
 import { Button } from './ui/button'
 import { Checkbox } from './ui/checkbox'
 import { Label } from './ui/label'
 import { Field, FieldLabel, FieldDescription } from './ui/field'
 import { Input } from './ui/input'
+import {
+    getDocumentsForRequestType,
+    ACCEPTED_FILE_TYPES,
+} from '@/constants/documents'
+import type { RequestType } from '@/types'
 
 interface DocumentsUploadFormProps {
     isReadyApplication: boolean
     onSubmit: () => Promise<void>
+    requestType?: RequestType
+    serviceId?: number
 }
 
 const DocumentsUploadForm = ({
     isReadyApplication,
     onSubmit,
+    requestType = 'tu',
+    serviceId,
 }: DocumentsUploadFormProps) => {
-    const [files, setFiles] = useState<{ [key: string]: File[] }>({})
+    const [files, setFiles] = useState<Record<string, File[]>>({})
     const [agreedToPersonalData, setAgreedToPersonalData] = useState(false)
     const [loading, setLoading] = useState(false)
 
-    const handleFileChange = (docType: string, filesArray: File[]) => {
-        setFiles((prev) => ({ ...prev, [docType]: filesArray }))
+    // Получаем список документов для текущего типа заявки и услуги
+    const documents = getDocumentsForRequestType(requestType, serviceId)
+
+    const handleFileChange = (docId: string, fileList: FileList | null) => {
+        if (fileList) {
+            setFiles((prev) => ({
+                ...prev,
+                [docId]: Array.from(fileList),
+            }))
+        }
     }
 
     const handleSubmit = async (event: React.FormEvent) => {
@@ -41,182 +63,49 @@ const DocumentsUploadForm = ({
         }
     }
 
+    // Формируем заголовок
+    const getTitle = () => {
+        if (isReadyApplication) {
+            return 'Перечень документов для отправки заявления'
+        }
+        return requestType === 'tu'
+            ? 'Перечень документов для получения ТУ'
+            : 'Перечень документов для заключения договора о подключении'
+    }
+
+    // Формируем текст кнопки
+    const getButtonText = () => {
+        if (loading) return 'Отправка...'
+        if (isReadyApplication) return 'Отправить заявление'
+        return 'Подписать заявление с помощью электронной подписи'
+    }
+
     return (
         <div className="space-y-6 mt-20 w-64 sm:w-80 lg:w-96 xl:w-110 mx-auto">
-            {isReadyApplication && (
-                <h2 className="text-lg xl:text-xl font-semibold text-center">
-                    Перечень документов, которые необходимо прикрепить для
-                    отправки заявления
-                </h2>
-            )}
-            {!isReadyApplication && (
-                <h2 className="text-lg xl:text-xl font-semibold text-center">
-                    Перечень документов, которые необходимо прикрепить для
-                    получения ТУ
-                </h2>
-            )}
+            <h2 className="text-lg xl:text-xl font-semibold text-center">
+                {getTitle()}
+            </h2>
 
-            {/* Документ 1 */}
-            <Field>
-                <FieldLabel>
-                    1. Копия паспорта или иного документа, удостоверяющего
-                    личность
-                </FieldLabel>
-                <FieldDescription>
-                    Для физических лиц, а также документы, подтверждающие
-                    полномочия
-                </FieldDescription>
-                <Input
-                    multiple
-                    type="file"
-                    accept=".pdf,.jpg,.jpeg,.png"
-                    onChange={(e) =>
-                        handleFileChange('passport', [
-                            ...(e.target.files || []),
-                        ])
-                    }
-                />
-            </Field>
-
-            {/* Документ 2 */}
-            <Field>
-                <FieldLabel>
-                    2. Копии правоудостоверяющих документов на земельный участок
-                </FieldLabel>
-                <FieldDescription>
-                    Выписка из ЕГРН (не старше 30 календарных дней) или
-                    правоустанавливающие документы
-                </FieldDescription>
-                <Input
-                    multiple
-                    type="file"
-                    accept=".pdf,.jpg,.jpeg,.png"
-                    onChange={(e) =>
-                        handleFileChange('landDocs', [
-                            ...(e.target.files || []),
-                        ])
-                    }
-                />
-            </Field>
-
-            {/* Документ 3 */}
-            <Field>
-                <FieldLabel>
-                    3. Копии правоудостоверяющих документов на подключаемый
-                    объект
-                </FieldLabel>
-                <FieldDescription>
-                    Для ранее построенных и введенных в эксплуатацию объектов
-                </FieldDescription>
-                <Input
-                    multiple
-                    type="file"
-                    accept=".pdf,.jpg,.jpeg,.png"
-                    onChange={(e) =>
-                        handleFileChange('objectDocs', [
-                            ...(e.target.files || []),
-                        ])
-                    }
-                />
-            </Field>
-
-            {/* Документ 4 */}
-            <Field>
-                <FieldLabel>
-                    4. Копия договора на подготовку проектной документации
-                </FieldLabel>
-                <FieldDescription>
-                    При обращении застройщиков или иных лиц с договором подряда
-                </FieldDescription>
-                <Input
-                    multiple
-                    type="file"
-                    accept=".pdf,.jpg,.jpeg,.png"
-                    onChange={(e) =>
-                        handleFileChange('projectContract', [
-                            ...(e.target.files || []),
-                        ])
-                    }
-                />
-            </Field>
-
-            {/* Документ 5 */}
-            <Field>
-                <FieldLabel>
-                    5. Копия договора о комплексном развитии территории
-                </FieldLabel>
-                <FieldDescription>
-                    При обращении лиц, заключивших такой договор
-                </FieldDescription>
-                <Input
-                    multiple
-                    type="file"
-                    accept=".pdf,.jpg,.jpeg,.png"
-                    onChange={(e) =>
-                        handleFileChange('developmentContract', [
-                            ...(e.target.files || []),
-                        ])
-                    }
-                />
-            </Field>
-
-            {/* Документ 6 */}
-            <Field>
-                <FieldLabel>
-                    6. Копия решения о предварительном согласовании
-                    предоставления земельного участка
-                </FieldLabel>
-                <FieldDescription>
-                    Для объектов федерального, регионального или местного
-                    значения
-                </FieldDescription>
-                <Input
-                    multiple
-                    type="file"
-                    accept=".pdf,.jpg,.jpeg,.png"
-                    onChange={(e) =>
-                        handleFileChange('approvalDecision', [
-                            ...(e.target.files || []),
-                        ])
-                    }
-                />
-            </Field>
-
-            {/* Документ 7 */}
-            <Field>
-                <FieldLabel>7. Схема размещения объектов абонента</FieldLabel>
-                <FieldDescription>
-                    При запросе на установку прибора учета
-                </FieldDescription>
-                <Input
-                    multiple
-                    type="file"
-                    accept=".pdf,.jpg,.jpeg,.png"
-                    onChange={(e) =>
-                        handleFileChange('layoutScheme', [
-                            ...(e.target.files || []),
-                        ])
-                    }
-                />
-            </Field>
-
-            {/* Документ 8 */}
-            <Field>
-                <FieldLabel>8. Схема прокладки сетей</FieldLabel>
-                <FieldDescription>
-                    При запросе на установку прибора учета
-                </FieldDescription>
-                <Input
-                    multiple
-                    type="file"
-                    accept=".pdf,.jpg,.jpeg,.png"
-                    onChange={(e) =>
-                        handleFileChange('networkScheme', [
-                            ...(e.target.files || []),
-                        ])
-                    }
-                />
-            </Field>
+            {/* Динамический список документов */}
+            {documents.map((doc, index) => (
+                <Field key={doc.id}>
+                    <FieldLabel>
+                        {index + 1}. {doc.label.replace(/^\d+\.\s*/, '')}
+                    </FieldLabel>
+                    <FieldDescription>{doc.description}</FieldDescription>
+                    <Input
+                        multiple
+                        type="file"
+                        accept={ACCEPTED_FILE_TYPES}
+                        onChange={(e) => handleFileChange(doc.id, e.target.files)}
+                    />
+                    {files[doc.id] && files[doc.id].length > 0 && (
+                        <p className="text-sm text-green-600 mt-1">
+                            ✓ Выбрано файлов: {files[doc.id].length}
+                        </p>
+                    )}
+                </Field>
+            ))}
 
             {/* Согласие на обработку персональных данных */}
             <Field>
@@ -237,37 +126,25 @@ const DocumentsUploadForm = ({
                 </div>
                 <FieldDescription className="mt-2 xl:mt-5">
                     <a
-                        href="/path/to/personal-data-policy.pdf"
+                        href="/personal-data-policy.pdf"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-blue-600 underline"
+                        className="text-blue-600 underline hover:text-blue-800"
                     >
-                        Ознакомиться с политикой обработки персональных данных в
-                        АО «Ростовводоканал»
+                        Ознакомиться с политикой обработки персональных данных
+                        в АО «Ростовводоканал»
                     </a>
                 </FieldDescription>
             </Field>
 
             {/* Кнопка подписания */}
-            {isReadyApplication ? (
-                <Button
-                    onClick={handleSubmit}
-                    disabled={!agreedToPersonalData || loading}
-                    className="w-full h-auto mt-6 whitespace-normal text-wrap"
-                >
-                    {loading ? 'Отправка...' : 'Отправить заявление'}
-                </Button>
-            ) : (
-                <Button
-                    onClick={handleSubmit}
-                    disabled={!agreedToPersonalData || loading}
-                    className="w-full h-auto mt-6 whitespace-normal text-wrap"
-                >
-                    {loading
-                        ? 'Отправка...'
-                        : 'Подписать заявление с помощью электронной подписи'}
-                </Button>
-            )}
+            <Button
+                onClick={handleSubmit}
+                disabled={!agreedToPersonalData || loading}
+                className="w-full h-auto mt-6 whitespace-normal text-wrap"
+            >
+                {getButtonText()}
+            </Button>
         </div>
     )
 }

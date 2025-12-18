@@ -323,6 +323,34 @@ export function FirstStepOfForm({
                 </Field>
             )}
 
+            {/* Подключение для нужд пожаротушения */}
+            {serviceName === SERVICE_TITLES.FIREFIGHTING && (
+                <Field className="mt-5 w-full">
+                    <FieldLabel>
+                        Подключение к сетям холодного водоснабжения для нужд
+                        пожаротушения
+                    </FieldLabel>
+                    <p className="text-sm text-muted-foreground mt-2">
+                        Укажите параметры пожаротушения в разделе «Информация об
+                        объекте»
+                    </p>
+                </Field>
+            )}
+
+            {/* Временное водоснабжение стройплощадки */}
+            {serviceName === SERVICE_TITLES.TEMPORARY_SUPPLY && (
+                <Field className="mt-5 w-full">
+                    <FieldLabel>
+                        Подключение к сетям холодного водоснабжения для
+                        временного водоснабжения строительной площадки
+                    </FieldLabel>
+                    <p className="text-sm text-muted-foreground mt-2">
+                        Укажите планируемую нагрузку водоснабжения в разделе
+                        «Информация об объекте»
+                    </p>
+                </Field>
+            )}
+
             {/* Иное */}
             {serviceName === SERVICE_TITLES.OTHER && <DialogForm />}
         </div>

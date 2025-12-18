@@ -21,6 +21,7 @@ import TwoStepOfAccordion from './components/TwoStepOfAccordion'
 import ThreeStepOfGroupButton from './components/ThreeStepOfGroupButton'
 import ForeStepOfInfoObj from './components/ForeStepOfInfoObj'
 import DocumentsUploadForm from './components/DocumentsUploadForm'
+import SuccessPage from './components/SuccessPage'
 
 // Хуки и утилиты
 import { useApiData } from '@/hooks/useApiData'
@@ -47,6 +48,10 @@ function App() {
     const [showStep4, setShowStep4] = useState(false)
     const [tabsState, setTabsState] = useState('')
 
+    // Успешная отправка
+    const [isSubmitted, setIsSubmitted] = useState(false)
+    const [submittedRequestId, setSubmittedRequestId] = useState<string>('')
+
     /**
      * Начать заполнение формы
      */
@@ -70,6 +75,8 @@ function App() {
         setTabsState('')
         setRequestType(null)
         setIsReadyApplication(false)
+        setIsSubmitted(false)
+        setSubmittedRequestId('')
     }, [])
 
     /**
@@ -97,8 +104,9 @@ function App() {
                     : await api.createDpRequest(cleanedData)
 
             console.log('Успешно:', response)
-            alert('Заявление успешно отправлено!')
-            resetForm()
+            // Показываем страницу успеха
+            setSubmittedRequestId(response?.id || '')
+            setIsSubmitted(true)
         } catch (err: unknown) {
             const error = err as { response?: { data?: { message?: string; errors?: string[] }; statusText?: string }; message?: string }
             console.error('Ошибка:', error.response?.data)
@@ -135,6 +143,17 @@ function App() {
                     Обновить страницу
                 </Button>
             </div>
+        )
+    }
+
+    // Страница успешной отправки
+    if (isSubmitted && requestType) {
+        return (
+            <SuccessPage
+                requestType={requestType}
+                requestId={submittedRequestId}
+                onNewRequest={resetForm}
+            />
         )
     }
 
@@ -276,6 +295,9 @@ function App() {
                     tabsState={tabsState}
                     updateCommon={updateCommon}
                     setIsSelectedForeStep={setShowStep4}
+                    selectedServiceName={
+                        services.find((s) => s.id === Number(selectedServiceId))?.name
+                    }
                 />
             )}
 
@@ -284,6 +306,8 @@ function App() {
                 <DocumentsUploadForm
                     isReadyApplication={isReadyApplication}
                     onSubmit={handleSubmit}
+                    requestType={requestType || 'tu'}
+                    serviceId={selectedServiceId ? Number(selectedServiceId) : undefined}
                 />
             )}
         </form>
