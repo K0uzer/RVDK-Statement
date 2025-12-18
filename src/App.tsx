@@ -1,4 +1,9 @@
-import { useEffect, useState } from 'react'
+/**
+ * Главный компонент приложения
+ * Портал приёма заявок АО «Ростовводоканал»
+ */
+
+import { useState, useCallback } from 'react'
 import './App.css'
 import { Button } from './components/ui/button'
 import { Field, FieldDescription, FieldLabel } from './components/ui/field'
@@ -9,644 +14,277 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select'
-import axios from 'axios'
-import FirsStepOfForm from './components/FirsStepOfForm'
+
+// Компоненты шагов формы
+import FirstStepOfForm from './components/FirstStepOfForm'
 import TwoStepOfAccordion from './components/TwoStepOfAccordion'
+import ThreeStepOfGroupButton from './components/ThreeStepOfGroupButton'
 import ForeStepOfInfoObj from './components/ForeStepOfInfoObj'
 import DocumentsUploadForm from './components/DocumentsUploadForm'
-import ThreeStepOfGroupButton from './components/ThreeStepOfGroupButton'
 
-export interface ServiceT {
-    id: number
-    name: string
-    applyingFor: 0 | 1
-}
-
-export interface AccordionT {
-    id: number
-    name: string
-    applyingFor: 0 | 1
-}
-
-function cleanCommonObject(obj: any): any {
-    if (obj === null || obj === undefined) {
-        return obj
-    }
-
-    if (typeof obj === 'string') {
-        return obj === '' ? null : obj
-    }
-
-    if (Array.isArray(obj)) {
-        return obj.map((item) => cleanCommonObject(item))
-    }
-
-    if (typeof obj === 'object') {
-        const result: any = {}
-        const clientObjectKeys = [
-            'individualClient',
-            'legalClient',
-            'legalClientIP',
-            'legalClientGov',
-        ]
-
-        for (const key in obj) {
-            if (obj.hasOwnProperty(key)) {
-                const cleanedValue = cleanCommonObject(obj[key])
-
-                if (clientObjectKeys.includes(key) && cleanedValue !== null) {
-                    if (isObjectEmpty(cleanedValue)) {
-                        result[key] = null
-                    } else {
-                        result[key] = cleanedValue
-                    }
-                } else {
-                    result[key] = cleanedValue
-                }
-            }
-        }
-
-        if (result.legalClient === null) {
-            result.objectiveInfo.coOwnerLegal = null
-        }
-
-        if (result.individualClient === null) {
-            result.objectiveInfo.coOwnerIndividual = null
-        }
-
-        return result
-    }
-
-    return obj
-}
-
-function isObjectEmpty(obj: any): boolean {
-    if (obj === null || obj === undefined) {
-        return true
-    }
-
-    if (typeof obj !== 'object' || Array.isArray(obj)) {
-        return false
-    }
-
-    for (const key in obj) {
-        if (obj.hasOwnProperty(key)) {
-            const value = obj[key]
-            // Если есть хоть что-то не null/undefined/пустая строка
-            if (value !== null && value !== undefined && value !== '') {
-                // Если это объект, проверяем, не пуст ли он
-                if (typeof value === 'object' && !Array.isArray(value)) {
-                    if (!isObjectEmpty(value)) {
-                        return false
-                    }
-                } else {
-                    return false
-                }
-            }
-        }
-    }
-
-    return true
-}
-
-const initialCommon = {
-    providingId: 0,
-    providingType: 0,
-    requestReasonId: 0,
-    individualClient: {
-        fullName: {
-            firstName: '',
-            lastName: '',
-            middleName: '',
-        },
-        birthday: '',
-        passportSerial: '',
-        pasportNumber: '',
-        pasportIssueDate: '',
-        issuedBy: '',
-        inn: '',
-        snils: '',
-        address: '',
-        postalAddress: '',
-        phoneNumber: '',
-        email: '',
-        trustee: {
-            trustNumber: '',
-            trusteeName: '',
-            trustDateFrom: '',
-            trustDateTo: '',
-        },
-    },
-    legalClient: {
-        nameFull: '',
-        nameShort: '',
-        ogrn: '',
-        inn: '',
-        factAddress: '',
-        legalAddress: '',
-        postalAddress: '',
-        phoneNumber: '',
-        email: '',
-        trustee: {
-            trustNumber: '',
-            trusteeName: '',
-            trustDateFrom: '',
-            trustDateTo: '',
-        },
-    },
-    legalClientIP: {
-        fullName: {
-            firstName: '',
-            lastName: '',
-            middleName: '',
-        },
-        ogrn: '',
-        inn: '',
-        factAddress: '',
-        legalAddress: '',
-        postalAddress: '',
-        phoneNumber: '',
-        email: '',
-        trustee: {
-            trustNumber: '',
-            trusteeName: '',
-            trustDateFrom: '',
-            trustDateTo: '',
-        },
-    },
-    legalClientGov: {
-        nameFull: '',
-        nameShort: '',
-        actingBasis: '',
-        location: '',
-        postalAddress: '',
-        phoneNumber: '',
-        email: '',
-        trustee: {
-            trustNumber: '',
-            trusteeName: '',
-            trustDateFrom: '',
-            trustDateTo: '',
-        },
-    },
-    objectiveInfo: {
-        number: '',
-        date: '',
-        name: '',
-        address: '',
-        cadastralNumber: '',
-        area: 0,
-        coOwnerIndividual: {
-            address: '',
-            fullName: {
-                firstName: '',
-                lastName: '',
-                middleName: '',
-            },
-            cadastralNumber: '',
-            objectiveAddress: '',
-        },
-        coOwnerLegal: {
-            name: '',
-            inn: '',
-            cadastralNumber: '',
-            objectiveAddress: '',
-        },
-        floors: 0,
-        height: 0,
-        flats: 0,
-        settlers: 0,
-        commissionPlanedOn: '',
-        dm: 0,
-        supplyVolumePerDay: 0,
-        supplyVolumePerHour: 0,
-        supplyVolumePerSecond: 0,
-        supplyVolumeInnerFirefightingPerSecond: 0,
-        supplyVolumeAutoFirefightingPerSecond: 0,
-        supplyVolumeOuterFirefightingPerSecond: 0,
-        disposalVolumePerDay: 0,
-        disposalVolumePerHour: 0,
-        disposalVolumePerSecond: 0,
-        hasWaterSupply: false,
-        hasWaterDisposal: false,
-        exploitationKind: '',
-        measuringDeviceLocation: '',
-        tcNumber: '',
-        tcDate: new Date().toISOString(),
-    },
-}
+// Хуки и утилиты
+import { useApiData } from '@/hooks/useApiData'
+import { api } from '@/api'
+import { initialFormData, cleanFormData, createUpdateFn } from '@/utils/form'
+import type { RequestFormData, RequestType } from '@/types'
 
 function App() {
-    const [common, setCommon] = useState(initialCommon)
-    const [isQuestionnaireState, setIsQuestionnaireState] = useState(false)
-    const [selectedServiceId, setSelectedServiceId] = useState<string>('')
-    const [isSelectedTwoStep, setIsSelectedTwoStep] = useState(false)
-    const [isSelectedThreeStep, setIsSelectedThreeStep] = useState(false)
-    const [isSelectedForeStep, setIsSelectedForeStep] = useState(false)
+    // Данные формы
+    const [formData, setFormData] = useState(initialFormData)
+    const updateCommon = useCallback(createUpdateFn(setFormData), [])
 
+    // Данные API
+    const { services, requestReasons, loading, error } = useApiData()
+
+    // UI состояние
+    const [requestType, setRequestType] = useState<RequestType | null>(null)
+    const [selectedServiceId, setSelectedServiceId] = useState('')
     const [isReadyApplication, setIsReadyApplication] = useState(false)
 
+    // Шаги формы
+    const [showStep2, setShowStep2] = useState(false)
+    const [showStep3, setShowStep3] = useState(false)
+    const [showStep4, setShowStep4] = useState(false)
     const [tabsState, setTabsState] = useState('')
-    //количество заполненный инпутов
-    const [, setQuantityFilledUpInputs] = useState(0)
 
-    const [service, setService] = useState<ServiceT[]>([])
-    const [accordion, setAccordion] = useState<AccordionT[]>([])
-
-    const [dt, setDT] = useState(false)
-    const [tu, setTU] = useState(false)
-
-    const updateCommon = (path: string, value: unknown) => {
-        setCommon((prev) => {
-            const keys = path.split('.')
-            const newCommon = JSON.parse(JSON.stringify(prev))
-            let current = newCommon
-
-            for (let i = 0; i < keys.length - 1; i++) {
-                current = current[keys[i]]
-            }
-            current[keys[keys.length - 1]] = value
-            return newCommon
-        })
+    /**
+     * Начать заполнение формы
+     */
+    const startForm = (type: RequestType, ready = false) => {
+        setRequestType(type)
+        setIsReadyApplication(ready)
+        if (ready) {
+            setShowStep4(true)
+        }
     }
 
-    useEffect(() => {
-        const get = async () => {
-            try {
-                const responseService = await axios.get(
-                    'http://172.201.236.227:82/api/Providing/get-providings',
-                )
-                const responseAccordion = await axios.get(
-                    'http://172.201.236.227:82/api/RequestReason/get-request-reasons',
-                )
-
-                setAccordion(responseAccordion.data)
-                setService(responseService.data)
-            } catch (error) {
-                console.error('Ошибка загрузки услуг:', error)
-            }
-        }
-
-        get()
+    /**
+     * Сброс формы
+     */
+    const resetForm = useCallback(() => {
+        setFormData(initialFormData)
+        setSelectedServiceId('')
+        setShowStep2(false)
+        setShowStep3(false)
+        setShowStep4(false)
+        setTabsState('')
+        setRequestType(null)
+        setIsReadyApplication(false)
     }, [])
 
-    if (service.length === 0 || accordion.length === 0) {
-        return <div className="p-4">Загрузка...</div>
+    /**
+     * Обработка выбора услуги
+     */
+    const handleServiceSelect = (value: string) => {
+        setSelectedServiceId(value)
+        updateCommon('providingId', parseInt(value))
     }
 
-    return (
-        <div>
-            {/* Группа кнопок для обработки появления условий форм */}
-            {!isQuestionnaireState ? (
-                <div>
+    /**
+     * Отправка формы
+     */
+    const handleSubmit = async () => {
+        const cleanedData = cleanFormData(
+            JSON.parse(JSON.stringify(formData)),
+        ) as RequestFormData
+
+        console.log('Отправка данных:', cleanedData)
+
+        try {
+            const response =
+                requestType === 'tu'
+                    ? await api.createTcRequest(cleanedData)
+                    : await api.createDpRequest(cleanedData)
+
+            console.log('Успешно:', response)
+            alert('Заявление успешно отправлено!')
+            resetForm()
+        } catch (err: unknown) {
+            const error = err as { response?: { data?: { message?: string; errors?: string[] }; statusText?: string }; message?: string }
+            console.error('Ошибка:', error.response?.data)
+            const errorMessage =
+                error.response?.data?.message ||
+                error.response?.data?.errors?.[0] ||
+                error.response?.statusText ||
+                error.message ||
+                'Произошла ошибка'
+            alert(`Ошибка: ${errorMessage}`)
+        }
+    }
+
+    // Загрузка данных
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center min-h-screen">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4" />
+                    <p>Загрузка данных...</p>
+                </div>
+            </div>
+        )
+    }
+
+    // Ошибка загрузки
+    if (error) {
+        return (
+            <div className="p-4 max-w-md mx-auto mt-10 text-center">
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+                    <p className="text-red-600">{error}</p>
+                </div>
+                <Button onClick={() => window.location.reload()}>
+                    Обновить страницу
+                </Button>
+            </div>
+        )
+    }
+
+    // Начальный экран — выбор типа заявки
+    if (!requestType) {
+        return (
+            <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-4">
+                <h1 className="text-2xl font-bold text-center mb-6">
+                    Портал приёма заявок
+                    <br />
+                    <span className="text-lg font-normal text-muted-foreground">
+                        АО «Ростовводоканал»
+                    </span>
+                </h1>
+
+                <div className="grid gap-3 w-full max-w-md">
                     <Button
-                        className="w-full sm:w-auto lg:w-80 xl:w-90 mt-1"
-                        onClick={() => {
-                            setIsQuestionnaireState(true)
-                            setTU(true)
-                        }}
                         size="lg"
+                        className="w-full"
+                        onClick={() => startForm('tu')}
                     >
-                        Подать заявку ТУ
+                        Подать заявку на ТУ
                     </Button>
+
                     <Button
-                        className="w-full sm:w-auto lg:w-80 xl:w-90 mt-1"
-                        onClick={() => {
-                            setIsQuestionnaireState(true)
-                            setDT(true)
-                        }}
                         size="lg"
+                        className="w-full"
+                        onClick={() => startForm('dp')}
                     >
-                        Подать заявку ДП
+                        Подать заявку на договор подключения
                     </Button>
+
+                    <div className="border-t my-4" />
+
                     <Button
-                        className="w-full sm:w-auto lg:w-80 xl:w-90 mt-1"
-                        onClick={() => {
-                            setIsQuestionnaireState(true)
-                            setIsSelectedForeStep(true)
-                            setIsReadyApplication(true)
-                            setTU(true)
-                        }}
+                        variant="outline"
                         size="lg"
+                        className="w-full"
+                        onClick={() => startForm('tu', true)}
                     >
-                        Заявка ТУ готова
+                        Заявка ТУ готова (только документы)
                     </Button>
+
                     <Button
-                        className="w-full sm:w-auto lg:w-80 xl:w-90 mt-1"
-                        onClick={() => {
-                            setIsQuestionnaireState(true)
-                            setIsSelectedForeStep(true)
-                            setIsReadyApplication(true)
-                            setDT(true)
-                        }}
+                        variant="outline"
                         size="lg"
+                        className="w-full"
+                        onClick={() => startForm('dp', true)}
                     >
-                        Заявка ДТ готова
+                        Заявка ДП готова (только документы)
                     </Button>
                 </div>
-            ) : (
-                <form className="min-h-screen max-w-6xl mx-auto px-4 py-6 sm:px-6 sm:py-8">
-                    {/* Форма версии ДТ */}
-                    {dt && (
-                        <>
-                            {!isReadyApplication && (
-                                <div className="grid">
-                                    <Button
-                                        className="w-16 sm:w-22 lg:w-25 xl:w-30"
-                                        onClick={() => {
-                                            setIsQuestionnaireState(false)
-                                            setCommon(initialCommon)
-                                            setSelectedServiceId('')
-                                            setIsSelectedTwoStep(false)
-                                            setIsSelectedThreeStep(false)
-                                            setIsSelectedForeStep(false)
-                                            setDT(false)
-                                        }}
-                                    >
-                                        Назад
-                                    </Button>
-                                    {/* Первый блок */}
-                                    <Field className="mt-5 w-64 sm:w-80 lg:w-96 xl:w-110">
-                                        <FieldLabel className="xl:text-lg">
-                                            Услуги подключения
-                                        </FieldLabel>
-                                        <Select
-                                            value={selectedServiceId}
-                                            onValueChange={(value) => {
-                                                setSelectedServiceId(value)
-                                                updateCommon(
-                                                    'providingId',
-                                                    parseInt(value),
-                                                )
-                                            }}
-                                        >
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Выберите услугу" />
-                                            </SelectTrigger>
-                                            <SelectContent className="w-64 sm:w-80 lg:w-96 xl:w-110">
-                                                {service.map(({ name, id }) => (
-                                                    <SelectItem
-                                                        key={id}
-                                                        value={`${id}`}
-                                                    >
-                                                        {name}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                        <FieldDescription>
-                                            Выберите необходимую вам услугу
-                                        </FieldDescription>
-                                    </Field>
-                                </div>
-                            )}
-                            {/* Первый блок */}
-                            {!!selectedServiceId && !isReadyApplication && (
-                                <FirsStepOfForm
-                                    service={service}
-                                    updateCommon={updateCommon}
-                                    selectedServiceId={selectedServiceId}
-                                />
-                            )}
-                            {/* Второй блок */}
-                            {!!selectedServiceId && !isReadyApplication && (
-                                <TwoStepOfAccordion
-                                    accordion={accordion}
-                                    updateCommon={updateCommon}
-                                    setIsSelectedTwoStep={setIsSelectedTwoStep}
-                                />
-                            )}
-                            {/* Третий блок */}
-                            {!!selectedServiceId && isSelectedTwoStep && (
-                                <ThreeStepOfGroupButton
-                                    setQuantityFilledUpInputs={
-                                        setQuantityFilledUpInputs
-                                    }
-                                    setTabsState={setTabsState}
-                                    updateCommon={updateCommon}
-                                    setIsSelectedThreeStep={
-                                        setIsSelectedThreeStep
-                                    }
-                                />
-                            )}
-                            {/* Четвёртый блок */}
-                            {!!selectedServiceId && isSelectedThreeStep && (
-                                <ForeStepOfInfoObj
-                                    tabsState={tabsState}
-                                    updateCommon={updateCommon}
-                                    setIsSelectedForeStep={
-                                        setIsSelectedForeStep
-                                    }
-                                />
-                            )}
-                            {/* Пятый блок с файлами */}
-                            {(isReadyApplication || isSelectedForeStep) && (
-                                <DocumentsUploadForm
-                                    isReadyApplication={isReadyApplication}
-                                    onSubmit={async () => {
-                                        const cleanCommon = cleanCommonObject(
-                                            JSON.parse(JSON.stringify(common)),
-                                        )
+            </div>
+        )
+    }
 
-                                        console.log(cleanCommon)
-                                        try {
-                                            const response = await axios.post(
-                                                'http://172.201.236.227:82/api/Request/create-tc-request',
-                                                cleanCommon,
-                                            )
-                                            console.log(
-                                                'Успешно:',
-                                                response.data,
-                                            )
-                                            alert(
-                                                'Заявление успешно отправлено!',
-                                            )
+    // Форма заявки (единая для ТУ и ДП)
+    return (
+        <form className="min-h-screen max-w-6xl mx-auto px-4 py-6 sm:px-6 sm:py-8">
+            {/* Заголовок и навигация */}
+            <div className="mb-6">
+                {!isReadyApplication && (
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        className="mb-2"
+                        onClick={resetForm}
+                    >
+                        ← Назад
+                    </Button>
+                )}
+                <h1 className="text-xl font-bold">
+                    {requestType === 'tu'
+                        ? 'Заявка на получение технических условий'
+                        : 'Заявка на заключение договора о подключении'}
+                </h1>
+            </div>
 
-                                            // Сброс формы
-                                            setCommon(initialCommon)
-                                            setSelectedServiceId('')
-                                            setIsSelectedTwoStep(false)
-                                            setIsSelectedThreeStep(false)
-                                            setIsSelectedForeStep(false)
-                                        } catch (error: any) {
-                                            console.error(
-                                                'Детали ошибки:',
-                                                error.response?.data,
-                                            )
-                                            const errorMessage =
-                                                error.response?.data?.message ||
-                                                error.response?.data
-                                                    ?.errors?.[0] ||
-                                                error.response?.statusText ||
-                                                error.message
-
-                                            alert(`Ошибка: ${errorMessage}`)
-                                        }
-                                    }}
-                                />
-                            )}
-                        </>
-                    )}
-
-                    {/* Форма версии ТУ */}
-                    {tu && (
-                        <>
-                            {!isReadyApplication && (
-                                <div className="grid">
-                                    <Button
-                                        className="w-16 sm:w-22 lg:w-25 xl:w-30"
-                                        onClick={() => {
-                                            setIsQuestionnaireState(false)
-                                            setCommon(initialCommon)
-                                            setSelectedServiceId('')
-                                            setIsSelectedTwoStep(false)
-                                            setIsSelectedThreeStep(false)
-                                            setIsSelectedForeStep(false)
-                                            setTU(false)
-                                        }}
-                                    >
-                                        Назад
-                                    </Button>
-                                    {/* Первый блок */}
-                                    <Field className="mt-5 w-64 sm:w-80 lg:w-96 xl:w-110">
-                                        <FieldLabel className="xl:text-lg">
-                                            Услуги подключения
-                                        </FieldLabel>
-                                        <Select
-                                            value={selectedServiceId}
-                                            onValueChange={(value) => {
-                                                setSelectedServiceId(value)
-                                                updateCommon(
-                                                    'providingId',
-                                                    parseInt(value),
-                                                )
-                                            }}
-                                        >
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Выберите услугу" />
-                                            </SelectTrigger>
-                                            <SelectContent className="w-64 sm:w-80 lg:w-96 xl:w-110">
-                                                {service.map(({ name, id }) => (
-                                                    <SelectItem
-                                                        key={id}
-                                                        value={`${id}`}
-                                                    >
-                                                        {name}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                        <FieldDescription>
-                                            Выберите необходимую вам услугу
-                                        </FieldDescription>
-                                    </Field>
-                                </div>
-                            )}
-
-                            {/* Первый блок */}
-                            {!!selectedServiceId && (
-                                <FirsStepOfForm
-                                    service={service}
-                                    updateCommon={updateCommon}
-                                    selectedServiceId={selectedServiceId}
-                                />
-                            )}
-
-                            {/* Второй блок */}
-                            {!!selectedServiceId && (
-                                <TwoStepOfAccordion
-                                    accordion={accordion}
-                                    updateCommon={updateCommon}
-                                    setIsSelectedTwoStep={setIsSelectedTwoStep}
-                                />
-                            )}
-
-                            {/* Третий блок */}
-                            {!!selectedServiceId && isSelectedTwoStep && (
-                                <ThreeStepOfGroupButton
-                                    setQuantityFilledUpInputs={
-                                        setQuantityFilledUpInputs
-                                    }
-                                    setTabsState={setTabsState}
-                                    updateCommon={updateCommon}
-                                    setIsSelectedThreeStep={
-                                        setIsSelectedThreeStep
-                                    }
-                                />
-                            )}
-
-                            {/* Четвёртый блок */}
-                            {!!selectedServiceId && isSelectedThreeStep && (
-                                <ForeStepOfInfoObj
-                                    tabsState={tabsState}
-                                    updateCommon={updateCommon}
-                                    setIsSelectedForeStep={
-                                        setIsSelectedForeStep
-                                    }
-                                />
-                            )}
-
-                            {/* Пятый блок с файлами */}
-                            {(isReadyApplication || isSelectedForeStep) && (
-                                <DocumentsUploadForm
-                                    isReadyApplication={isReadyApplication}
-                                    onSubmit={async () => {
-                                        const cleanCommon = cleanCommonObject(
-                                            JSON.parse(JSON.stringify(common)),
-                                        )
-
-                                        console.log(cleanCommon)
-                                        try {
-                                            const response = await axios.post(
-                                                'http://172.201.236.227:82/api/Request/create-tc-request',
-                                                cleanCommon,
-                                            )
-                                            console.log(
-                                                'Успешно:',
-                                                response.data,
-                                            )
-                                            alert(
-                                                'Заявление успешно отправлено!',
-                                            )
-
-                                            // Сброс формы
-                                            setCommon(initialCommon)
-                                            setSelectedServiceId('')
-                                            setIsSelectedTwoStep(false)
-                                            setIsSelectedThreeStep(false)
-                                            setIsSelectedForeStep(false)
-                                        } catch (error: any) {
-                                            console.error(
-                                                'Детали ошибки:',
-                                                error.response?.data,
-                                            )
-                                            const errorMessage =
-                                                error.response?.data?.message ||
-                                                error.response?.data
-                                                    ?.errors?.[0] ||
-                                                error.response?.statusText ||
-                                                error.message
-
-                                            alert(`Ошибка: ${errorMessage}`)
-                                        }
-                                    }}
-                                />
-                            )}
-                        </>
-                    )}
-
-                    {/* Debug */}
-                    {/* {process.env.NODE_ENV === 'development' && (
-                            <details className="mt-8 p-4 border rounded bg-gray-100">
-                                <summary>Debug: common object</summary>
-                                <pre className="text-xs overflow-auto">
-                                    {JSON.stringify(common, null, 2)}
-                                </pre>
-                            </details>
-                        )} */}
-                </form>
+            {/* Шаг 1: Выбор услуги */}
+            {!isReadyApplication && (
+                <Field className="mt-5 w-64 sm:w-80 lg:w-96 xl:w-110">
+                    <FieldLabel className="xl:text-lg">
+                        Услуги подключения
+                    </FieldLabel>
+                    <Select
+                        value={selectedServiceId}
+                        onValueChange={handleServiceSelect}
+                    >
+                        <SelectTrigger>
+                            <SelectValue placeholder="Выберите услугу" />
+                        </SelectTrigger>
+                        <SelectContent className="w-64 sm:w-80 lg:w-96 xl:w-110">
+                            {services.map(({ name, id }) => (
+                                <SelectItem key={id} value={`${id}`}>
+                                    {name}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                    <FieldDescription>
+                        Выберите необходимую вам услугу
+                    </FieldDescription>
+                </Field>
             )}
-        </div>
+
+            {/* Детали услуги */}
+            {selectedServiceId && !isReadyApplication && (
+                <FirstStepOfForm
+                    services={services}
+                    updateCommon={updateCommon}
+                    selectedServiceId={selectedServiceId}
+                />
+            )}
+
+            {/* Шаг 2: Основание обращения */}
+            {selectedServiceId && !isReadyApplication && (
+                <TwoStepOfAccordion
+                    accordion={requestReasons}
+                    updateCommon={updateCommon}
+                    setIsSelectedTwoStep={setShowStep2}
+                />
+            )}
+
+            {/* Шаг 3: Сведения о заявителе */}
+            {selectedServiceId && showStep2 && (
+                <ThreeStepOfGroupButton
+                    setQuantityFilledUpInputs={() => {}}
+                    setTabsState={setTabsState}
+                    updateCommon={updateCommon}
+                    setIsSelectedThreeStep={setShowStep3}
+                />
+            )}
+
+            {/* Шаг 4: Информация об объекте */}
+            {selectedServiceId && showStep3 && (
+                <ForeStepOfInfoObj
+                    tabsState={tabsState}
+                    updateCommon={updateCommon}
+                    setIsSelectedForeStep={setShowStep4}
+                />
+            )}
+
+            {/* Шаг 5: Загрузка документов */}
+            {(isReadyApplication || showStep4) && (
+                <DocumentsUploadForm
+                    isReadyApplication={isReadyApplication}
+                    onSubmit={handleSubmit}
+                />
+            )}
+        </form>
     )
 }
 
