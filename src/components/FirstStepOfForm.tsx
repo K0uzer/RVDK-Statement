@@ -1,6 +1,23 @@
 /**
- * Шаг 1: Детали выбранной услуги подключения
- * Рефакторинг FirsStepOfForm.tsx
+ * ШАГ 1.1: Детали выбранной услуги подключения
+ * 
+ * Этот компонент отображает дополнительные опции в зависимости от выбранной услуги.
+ * Рендерит соответствующие чекбоксы и поля ввода для каждого типа услуги.
+ * 
+ * Услуги подключения (согласно ТЗ):
+ * 1) Новое подключение (водоснабжение/водоотведение)
+ * 2) Подключение для нужд пожаротушения
+ * 3) Временное водоснабжение стройплощадки
+ * 4) Реконструкция сетей без изменения нагрузки (с указанием диаметра)
+ * 5) Подключение к сетям смежного владельца
+ * 6) Подключение к внутридворовым сетям
+ * 7) Корректировка ТУ (требует номер и дату ТУ)
+ * 8) Аннулирование ТУ (требует номер, дату и причину)
+ * 9) Вынос сетей (с указанием диаметра)
+ * 10) Установка прибора учета
+ * 11) Иное (открывает модальное окно)
+ * 
+ * @module FirstStepOfForm
  */
 
 import { useState, useCallback } from 'react'
@@ -12,28 +29,42 @@ import DialogForm from './DialogForm'
 import type { ServiceT } from '@/types'
 import type { UpdateFormFn } from '@/utils/form'
 
+/**
+ * Props компонента FirstStepOfForm
+ * 
+ * @property services - Массив услуг, загруженный с API
+ * @property updateCommon - Функция для обновления данных формы
+ * @property selectedServiceId - ID выбранной услуги
+ */
 interface FirstStepOfFormProps {
     services: ServiceT[]
     updateCommon: UpdateFormFn
     selectedServiceId: string
 }
 
-// Опции для чекбоксов водоснабжения/водоотведения
+/**
+ * Базовые опции для выбора типа подключения (водоснабжение/водоотведение)
+ * Используются в нескольких секциях формы
+ */
 const WATER_OPTIONS = [
     {
         id: 'water-supply',
         label: 'Водоснабжения',
         value: 'Водоснабжения',
-        providingType: PROVIDING_TYPES.WATER_SUPPLY as 0 | 1,
+        providingType: PROVIDING_TYPES.WATER_SUPPLY as 0 | 1, // 0 = водоснабжение
     },
     {
         id: 'water-disposal',
         label: 'Водоотведения',
         value: 'Водоотведения',
-        providingType: PROVIDING_TYPES.WATER_DISPOSAL as 0 | 1,
+        providingType: PROVIDING_TYPES.WATER_DISPOSAL as 0 | 1, // 1 = водоотведение
     },
 ]
 
+/**
+ * Опции для нового подключения
+ * Отличаются от базовых более подробными метками
+ */
 const NEW_CONNECTION_OPTIONS = [
     {
         id: 'cold-water',
@@ -49,37 +80,62 @@ const NEW_CONNECTION_OPTIONS = [
     },
 ]
 
+/**
+ * Опции для установки приборов учета
+ */
 const METER_OPTIONS = [
     { id: 'meter-water', label: 'Воды', value: 'Воды' },
     { id: 'meter-sewerage', label: 'Сточных вод', value: 'Сточных вод' },
 ]
 
+/**
+ * Компонент деталей услуги подключения
+ * 
+ * Логика работы:
+ * 1. Получает выбранную услугу по ID
+ * 2. Рендерит соответствующую секцию с чекбоксами/полями
+ * 3. При изменении обновляет данные формы через updateCommon
+ */
 export function FirstStepOfForm({
     services,
     updateCommon,
     selectedServiceId,
 }: FirstStepOfFormProps) {
-    // Объединённое состояние для всех типов чекбоксов
+    /**
+     * Объединённое состояние для всех типов чекбоксов
+     * Ключи соответствуют категориям услуг
+     * Значения — массивы выбранных опций
+     */
     const [selections, setSelections] = useState<Record<string, string[]>>({
-        newConnection: [],
-        adjacent: [],
-        reconstruction: [],
-        yard: [],
-        networkRemoval: [],
-        meter: [],
+        newConnection: [],    // Новое подключение
+        adjacent: [],         // Смежный владелец
+        reconstruction: [],   // Реконструкция
+        yard: [],            // Внутридворовые сети
+        networkRemoval: [],  // Вынос сетей
+        meter: [],           // Приборы учета
     })
 
-    // Состояние для полей ввода
-    const [tcNumber, setTcNumber] = useState('')
-    const [tcDate, setTcDate] = useState('')
-    const [reason, setReason] = useState('')
-    const [diameter, setDiameter] = useState('')
+    /**
+     * Состояние для полей ввода
+     * Используются для корректировки/аннулирования ТУ и указания диаметра
+     */
+    const [tcNumber, setTcNumber] = useState('')   // Номер ТУ
+    const [tcDate, setTcDate] = useState('')       // Дата выдачи ТУ
+    const [reason, setReason] = useState('')       // Причина (для аннулирования)
+    const [diameter, setDiameter] = useState('')   // Диаметр сетей (мм)
 
+    // Находим выбранную услугу по ID
     const selectedService = services.find(
         (s) => s.id === Number(selectedServiceId),
     )
 
-    // Универсальный обработчик переключения чекбокса
+    /**
+     * Универсальный обработчик переключения чекбокса
+     * 
+     * @param category - Категория чекбоксов (newConnection, adjacent и т.д.)
+     * @param value - Значение опции
+     * @param providingType - Тип подключения (0 = водоснабжение, 1 = водоотведение)
+     */
     const handleToggle = useCallback(
         (
             category: string,
@@ -88,12 +144,14 @@ export function FirstStepOfForm({
         ) => {
             setSelections((prev) => {
                 const current = prev[category] || []
+                // Переключаем: если есть — удаляем, если нет — добавляем
                 const updated = current.includes(value)
                     ? current.filter((v) => v !== value)
                     : [...current, value]
                 return { ...prev, [category]: updated }
             })
 
+            // Обновляем тип подключения в данных формы
             if (providingType !== undefined) {
                 updateCommon('providingType', providingType)
             }
@@ -101,16 +159,22 @@ export function FirstStepOfForm({
         [updateCommon],
     )
 
-    // Обработчик изменения диаметра
+    /**
+     * Обработчик изменения диаметра сетей
+     * Сохраняет значение в objectiveInfo.dm
+     */
     const handleDiameterChange = useCallback(
         (value: string) => {
             setDiameter(value)
-            updateCommon('objectiveInfo.dm', +value)
+            updateCommon('objectiveInfo.dm', +value) // Преобразуем в число
         },
         [updateCommon],
     )
 
-    // Обработчик изменения номера ТУ
+    /**
+     * Обработчик изменения номера ТУ
+     * Используется для корректировки/аннулирования
+     */
     const handleTcNumberChange = useCallback(
         (value: string) => {
             setTcNumber(value)
@@ -119,7 +183,9 @@ export function FirstStepOfForm({
         [updateCommon],
     )
 
-    // Обработчик изменения даты ТУ
+    /**
+     * Обработчик изменения даты ТУ
+     */
     const handleTcDateChange = useCallback(
         (value: string) => {
             setTcDate(value)
@@ -128,6 +194,7 @@ export function FirstStepOfForm({
         [updateCommon],
     )
 
+    // Если услуга не найдена — ничего не рендерим
     if (!selectedService) return null
 
     const serviceName = selectedService.name
