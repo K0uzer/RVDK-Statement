@@ -3,10 +3,8 @@
  */
 
 import { FormField, TrusteeFields } from './FormField'
-import { Field, FieldLabel } from '@/components/ui/field'
-import { Input } from '@/components/ui/input'
+import { FullNameField } from './FullNameField'
 import type { UpdateFormFn } from '@/utils/form'
-import { parseFullName } from '@/utils/form'
 
 interface IndividualClientFormProps {
     updateCommon: UpdateFormFn
@@ -21,26 +19,11 @@ export function IndividualClientForm({
 
     return (
         <div className="space-y-4 sm:w-80 lg:w-96 xl:w-110">
-            {/* ФИО */}
-            <Field>
-                <FieldLabel className="mt-5">
-                    Ф.И.О. (последнее – при наличии)
-                    <span className="text-red-500 ml-1">*</span>
-                </FieldLabel>
-                <Input
-                    required
-                    placeholder="Иванов Иван Иванович"
-                    onChange={(e) => {
-                        const { firstName, middleName, lastName } = parseFullName(
-                            e.target.value,
-                        )
-                        updateCommon(`${basePath}.fullName.firstName`, firstName)
-                        updateCommon(`${basePath}.fullName.middleName`, middleName)
-                        updateCommon(`${basePath}.fullName.lastName`, lastName)
-                        onFirstFieldFilled?.()
-                    }}
-                />
-            </Field>
+            <FullNameField
+                basePath={basePath}
+                updateCommon={updateCommon}
+                onFirstFieldFilled={onFirstFieldFilled}
+            />
 
             <FormField
                 label="Дата рождения"

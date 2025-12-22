@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import legacy from '@vitejs/plugin-legacy'
 import path from 'path'
+import { preloadCriticalChunks } from './vite.config.plugin.preload'
 
 // Определяем режим сборки для legacy
 const isLegacyBuild = process.env.LEGACY_BUILD === 'true'
@@ -15,6 +16,8 @@ export default defineConfig({
             },
         }),
         tailwindcss(),
+        // Плагин для автоматического preload критических чанков
+        preloadCriticalChunks(),
         // Плагин для legacy браузеров (включается при LEGACY_BUILD=true)
         isLegacyBuild &&
             legacy({
@@ -81,20 +84,68 @@ export default defineConfig({
                   },
               }
             : undefined,
-        // Разделение чанков
+        // Разделение чанков для оптимизации загрузки
         rollupOptions: {
             output: {
-                manualChunks: {
-                    // Выносим React в отдельный чанк
-                    react: ['react', 'react-dom'],
-                    // Выносим UI-библиотеки
-                    'radix-ui': [
-                        '@radix-ui/react-accordion',
-                        '@radix-ui/react-checkbox',
-                        '@radix-ui/react-dialog',
-                        '@radix-ui/react-select',
-                        '@radix-ui/react-tabs',
-                    ],
+                // Preload для критических чанков
+                entryFileNames: 'assets/[name]-[hash].js',
+                chunkFileNames: 'assets/[name]-[hash].js',
+                assetFileNames: 'assets/[name]-[hash].[ext]',
+                manualChunks: (id) => {
+                    // React и React DOM в отдельный чанк
+                    if (id.includes('react') || id.includes('react-dom')) {
+                        return 'react-vendor'
+                    }
+
+                    // Все Radix UI компоненты в один чанк
+                    if (id.includes('@radix-ui')) {
+                        return 'radix-ui'
+                    }
+
+                    // Axios и HTTP-логика
+                    if (id.includes('axios')) {
+                        return 'http-client'
+                    }
+
+                    // UI компоненты (shadcn)
+                    if (id.includes('/components/ui/')) {
+                        return 'ui-components'
+                    }
+
+                    // Формы заявителей
+                    if (id.includes('/components/forms/')) {
+                        return 'form-components'
+                    }
+
+                    // Шаги формы (lazy loaded)
+                    if (id.includes('/components/FirstStepOfForm') ||
+                        id.includes('/components/TwoStepOfAccordion') ||
+                        id.includes('/components/ThreeStepOfGroupButton') ||
+                        id.includes('/components/ForeStepOfInfoObj') ||
+                        id.includes('/components/DocumentsUploadForm') ||
+                        id.includes('/components/SuccessPage')) {
+                        return 'form-steps'
+                    }
+
+                    // Утилиты и константы
+                    if (id.includes('/utils/') || id.includes('/constants/')) {
+                        return 'utils'
+                    }
+
+                    // API и конфигурация
+                    if (id.includes('/api/') || id.includes('/config/')) {
+                        return 'api-config'
+                    }
+
+                    // Хуки
+                    if (id.includes('/hooks/')) {
+                        return 'hooks'
+                    }
+
+                    // Остальные node_modules
+                    if (id.includes('node_modules')) {
+                        return 'vendor'
+                    }
                 },
             },
         },

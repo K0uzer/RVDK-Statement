@@ -12,6 +12,7 @@ import {
 } from './forms'
 import type { UpdateFormFn } from '@/utils/form'
 import type { ClientType } from '@/types'
+import { createClientTabsConfig, CLIENT_TYPE_MAP } from '@/config/clientTabs'
 
 interface ClientInfoStepProps {
     updateCommon: UpdateFormFn
@@ -19,25 +20,19 @@ interface ClientInfoStepProps {
     onFormStarted: () => void
 }
 
-const CLIENT_TYPE_MAP: Record<string, ClientType> = {
-    fiz: 'individual',
-    ur: 'legal',
-    ind: 'ip',
-    gos: 'gov',
-}
-
-const TAB_LABELS = {
-    fiz: 'Физ. лица',
-    ur: 'Юр. лица',
-    ind: 'Индивидуальный предпр.',
-    gos: 'Орган гос. власти',
-} as const
-
 export function ClientInfoStep({
     updateCommon,
     onClientTypeChange,
     onFormStarted,
 }: ClientInfoStepProps) {
+    // Декларативная конфигурация вкладок
+    const tabsConfig = createClientTabsConfig({
+        IndividualClientForm,
+        LegalClientForm,
+        IPClientForm,
+        GovClientForm,
+    })
+
     const handleTabChange = (value: string) => {
         const clientType = CLIENT_TYPE_MAP[value]
         if (clientType) {
@@ -52,56 +47,29 @@ export function ClientInfoStep({
             </h2>
 
             <Tabs
-                defaultValue="fiz"
+                defaultValue={tabsConfig[0].value}
                 onValueChange={handleTabChange}
                 className="w-64 sm:w-80 lg:w-96 xl:w-110 border-b"
             >
                 <TabsList className="w-64 h-10 flex flex-wrap sm:w-80 lg:w-96 xl:w-110">
-                    <TabsTrigger className="rounded-none" value="fiz">
-                        {TAB_LABELS.fiz}
-                    </TabsTrigger>
-                    <TabsTrigger className="rounded-none" value="ur">
-                        {TAB_LABELS.ur}
-                    </TabsTrigger>
-                    <TabsTrigger className="rounded-none" value="ind">
-                        {TAB_LABELS.ind}
-                    </TabsTrigger>
-                    <TabsTrigger className="rounded-none" value="gos">
-                        {TAB_LABELS.gos}
-                    </TabsTrigger>
+                    {tabsConfig.map((tab) => (
+                        <TabsTrigger key={tab.value} className="rounded-none" value={tab.value}>
+                            {tab.label}
+                        </TabsTrigger>
+                    ))}
                 </TabsList>
 
-                {/* Физические лица */}
-                <TabsContent className="mt-20" value="fiz">
-                    <IndividualClientForm
-                        updateCommon={updateCommon}
-                        onFirstFieldFilled={onFormStarted}
-                    />
-                </TabsContent>
-
-                {/* Юридические лица */}
-                <TabsContent className="mt-20" value="ur">
-                    <LegalClientForm
-                        updateCommon={updateCommon}
-                        onFirstFieldFilled={onFormStarted}
-                    />
-                </TabsContent>
-
-                {/* Индивидуальные предприниматели */}
-                <TabsContent className="mt-20" value="ind">
-                    <IPClientForm
-                        updateCommon={updateCommon}
-                        onFirstFieldFilled={onFormStarted}
-                    />
-                </TabsContent>
-
-                {/* Государственные органы */}
-                <TabsContent className="mt-20" value="gos">
-                    <GovClientForm
-                        updateCommon={updateCommon}
-                        onFirstFieldFilled={onFormStarted}
-                    />
-                </TabsContent>
+                {tabsConfig.map((tab) => {
+                    const FormComponent = tab.component
+                    return (
+                        <TabsContent key={tab.value} className="mt-20" value={tab.value}>
+                            <FormComponent
+                                updateCommon={updateCommon}
+                                onFirstFieldFilled={onFormStarted}
+                            />
+                        </TabsContent>
+                    )
+                })}
             </Tabs>
         </div>
     )

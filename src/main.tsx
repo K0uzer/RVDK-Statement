@@ -5,6 +5,7 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import './styles/style.css'
 import App from './App.tsx'
+import { registerServiceWorker } from './utils/serviceWorker'
 
 // Проверка поддержки браузера
 const checkBrowserSupport = () => {
@@ -27,6 +28,11 @@ const rootElement = document.getElementById('root')
 
 if (rootElement) {
     createRoot(rootElement).render(<App />)
+    
+    // Регистрируем Service Worker для кэширования (только в production)
+    if (import.meta.env.PROD) {
+        registerServiceWorker()
+    }
 } else {
     console.error('Root element not found')
 }

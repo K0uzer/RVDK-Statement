@@ -2,7 +2,7 @@
  * Шаг загрузки документов (оптимизированная версия)
  */
 
-import { useState } from 'react'
+import { FormEvent, useState } from 'react'
 import { Button } from './ui/button'
 import { Checkbox } from './ui/checkbox'
 import { Label } from './ui/label'
@@ -42,7 +42,7 @@ export function DocumentsStep({
         }
     }
 
-    const handleSubmit = async (event: React.FormEvent) => {
+    const handleSubmit = async (event: FormEvent) => {
         event.preventDefault()
 
         if (!agreedToPersonalData) {

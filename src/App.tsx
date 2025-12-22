@@ -43,18 +43,27 @@ import {
     SelectValue,
 } from '@/components/ui/select'
 
-// ================== КОМПОНЕНТЫ ШАГОВ ФОРМЫ ==================
-import FirstStepOfForm from './components/FirstStepOfForm'      // Шаг 1: Детали услуги
-import TwoStepOfAccordion from './components/TwoStepOfAccordion' // Шаг 2: Основание обращения
-import ThreeStepOfGroupButton from './components/ThreeStepOfGroupButton' // Шаг 3: Данные заявителя
-import ForeStepOfInfoObj from './components/ForeStepOfInfoObj'   // Шаг 4: Информация об объекте
-import DocumentsUploadForm from './components/DocumentsUploadForm' // Шаг 5: Документы
-import SuccessPage from './components/SuccessPage'               // Страница успешной отправки
+// ================== LAZY LOADING КОМПОНЕНТОВ ==================
+// Динамическая загрузка компонентов для code splitting
+import {
+    FirstStepOfForm,
+    TwoStepOfAccordion,
+    ForeStepOfInfoObj,
+    DocumentsUploadForm,
+    SuccessPage,
+} from './components/lazy'
+import { ClientInfoStep } from './components/ClientInfoStep'
+import { LazyErrorBoundary } from './components/LazyErrorBoundary'
+import type { ClientType } from '@/types'
 
 // ================== ХУКИ И УТИЛИТЫ ==================
 import { useApiData } from '@/hooks/useApiData'
 import { api } from '@/api'
 import { initialFormData, cleanFormData, createUpdateFn } from '@/utils/form'
+import { handleError } from '@/utils/errorHandling'
+import { getRequestTypeConfig } from '@/config/requestTypes'
+import { INITIAL_SCREEN_CONFIG } from '@/config/initialScreen'
+import { config } from '@/config'
 import type { RequestFormData, RequestType } from '@/types'
 
 function App() {
@@ -170,11 +179,21 @@ function App() {
         console.log('Отправка данных:', cleanedData)
 
         try {
-            // Выбираем endpoint в зависимости от типа заявки
-            const response =
-                requestType === 'tu'
-                    ? await api.createTcRequest(cleanedData)
-                    : await api.createDpRequest(cleanedData)
+            // Декларативный выбор endpoint на основе конфигурации
+            if (!requestType) {
+                throw new Error('Тип заявки не выбран')
+            }
+            
+            const requestConfig = getRequestTypeConfig(
+                {
+                    createTcRequest: (data: unknown) => api.createTcRequest(data as RequestFormData),
+                    createDpRequest: (data: unknown) => api.createDpRequest(data as RequestFormData),
+                },
+                config,
+            )
+            const currentConfig = requestConfig[requestType]
+            
+            const response = await currentConfig.endpoint(cleanedData)
 
             console.log('Успешно:', response)
             
@@ -182,25 +201,8 @@ function App() {
             setSubmittedRequestId(response?.id || '')
             setIsSubmitted(true)
         } catch (err: unknown) {
-            // Обработка ошибок API
-            const error = err as { 
-                response?: { 
-                    data?: { message?: string; errors?: string[] }
-                    statusText?: string 
-                }
-                message?: string 
-            }
-            console.error('Ошибка:', error.response?.data)
-            
-            // Извлекаем сообщение об ошибке из разных возможных мест
-            const errorMessage =
-                error.response?.data?.message ||
-                error.response?.data?.errors?.[0] ||
-                error.response?.statusText ||
-                error.message ||
-                'Произошла ошибка'
-            
-            alert(`Ошибка: ${errorMessage}`)
+            // Декларативная обработка ошибок
+            handleError(err)
         }
     }
 
@@ -245,11 +247,13 @@ function App() {
      */
     if (isSubmitted && requestType) {
         return (
-            <SuccessPage
-                requestType={requestType}
-                requestId={submittedRequestId}
-                onNewRequest={resetForm}
-            />
+            <LazyErrorBoundary>
+                <SuccessPage
+                    requestType={requestType}
+                    requestId={submittedRequestId}
+                    onNewRequest={resetForm}
+                />
+            </LazyErrorBoundary>
         )
     }
 
@@ -257,12 +261,13 @@ function App() {
 
     /**
      * Начальный экран выбора типа заявки
-     * Пользователь выбирает:
-     * - ТУ (Технические условия)
-     * - ДП (Договор подключения)
-     * - или "готовую заявку" если данные уже заполнены офлайн
+     * Использует декларативную конфигурацию кнопок
      */
     if (!requestType) {
+        // Разделяем кнопки на основные и готовые заявки
+        const mainButtons = INITIAL_SCREEN_CONFIG.filter((btn) => !btn.isReady)
+        const readyButtons = INITIAL_SCREEN_CONFIG.filter((btn) => btn.isReady)
+
         return (
             <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-4">
                 <h1 className="text-2xl font-bold text-center mb-6">
@@ -275,42 +280,32 @@ function App() {
 
                 <div className="grid gap-3 w-full max-w-md">
                     {/* Основные кнопки — полный цикл заполнения */}
-                    <Button
-                        size="lg"
-                        className="w-full"
-                        onClick={() => startForm('tu')}
-                    >
-                        Подать заявку на ТУ
-                    </Button>
+                    {mainButtons.map((button) => (
+                        <Button
+                            key={`${button.requestType}-${button.isReady}`}
+                            size="lg"
+                            variant={button.variant || 'default'}
+                            className="w-full"
+                            onClick={() => startForm(button.requestType, button.isReady)}
+                        >
+                            {button.label}
+                        </Button>
+                    ))}
 
-                    <Button
-                        size="lg"
-                        className="w-full"
-                        onClick={() => startForm('dp')}
-                    >
-                        Подать заявку на договор подключения
-                    </Button>
-
-                    <div className="border-t my-4" />
+                    {readyButtons.length > 0 && <div className="border-t my-4" />}
 
                     {/* Кнопки для готовых заявок — только загрузка документов */}
-                    <Button
-                        variant="outline"
-                        size="lg"
-                        className="w-full"
-                        onClick={() => startForm('tu', true)}
-                    >
-                        Заявка ТУ готова (только документы)
-                    </Button>
-
-                    <Button
-                        variant="outline"
-                        size="lg"
-                        className="w-full"
-                        onClick={() => startForm('dp', true)}
-                    >
-                        Заявка ДП готова (только документы)
-                    </Button>
+                    {readyButtons.map((button) => (
+                        <Button
+                            key={`${button.requestType}-${button.isReady}`}
+                            size="lg"
+                            variant={button.variant || 'outline'}
+                            className="w-full"
+                            onClick={() => startForm(button.requestType, button.isReady)}
+                        >
+                            {button.label}
+                        </Button>
+                    ))}
                 </div>
             </div>
         )
@@ -382,59 +377,77 @@ function App() {
             {/* ========== ШАГ 1.1: ДЕТАЛИ ВЫБРАННОЙ УСЛУГИ ========== */}
             {/* Чекбоксы водоснабжение/водоотведение, поля для ТУ и т.д. */}
             {selectedServiceId && !isReadyApplication && (
-                <FirstStepOfForm
-                    services={services}
-                    updateCommon={updateCommon}
-                    selectedServiceId={selectedServiceId}
-                />
+                <LazyErrorBoundary>
+                    <FirstStepOfForm
+                        services={services}
+                        updateCommon={updateCommon}
+                        selectedServiceId={selectedServiceId}
+                    />
+                </LazyErrorBoundary>
             )}
 
             {/* ========== ШАГ 2: ОСНОВАНИЕ ОБРАЩЕНИЯ ========== */}
             {/* Accordion с чекбоксами — выбор одного из 4-5 оснований */}
             {selectedServiceId && !isReadyApplication && (
-                <TwoStepOfAccordion
-                    accordion={requestReasons}
-                    updateCommon={updateCommon}
-                    setIsSelectedTwoStep={setShowStep2}
-                />
+                <LazyErrorBoundary>
+                    <TwoStepOfAccordion
+                        accordion={requestReasons}
+                        updateCommon={updateCommon}
+                        setIsSelectedTwoStep={setShowStep2}
+                    />
+                </LazyErrorBoundary>
             )}
 
             {/* ========== ШАГ 3: СВЕДЕНИЯ О ЗАЯВИТЕЛЕ ========== */}
             {/* Tabs: Физ.лица / Юр.лица / ИП / Гос.органы */}
             {/* Появляется после выбора основания обращения */}
             {selectedServiceId && showStep2 && (
-                <ThreeStepOfGroupButton
-                    setQuantityFilledUpInputs={() => {}} // TODO: убрать неиспользуемый prop
-                    setTabsState={setTabsState}           // Тип заявителя для Шага 4
-                    updateCommon={updateCommon}
-                    setIsSelectedThreeStep={setShowStep3}
-                />
+                <LazyErrorBoundary>
+                    <ClientInfoStep
+                        updateCommon={updateCommon}
+                        onClientTypeChange={(type) => {
+                            // Преобразуем ClientType в tabsState для совместимости
+                            const tabsStateMap: Record<ClientType, string> = {
+                                individual: 'Физ. лица',
+                                legal: 'Юр. лица',
+                                ip: 'Индивидуальный предпр.',
+                                gov: 'Орган гос. власти и само упр.',
+                            }
+                            setTabsState(tabsStateMap[type])
+                        }}
+                        onFormStarted={() => setShowStep3(true)}
+                    />
+                </LazyErrorBoundary>
             )}
 
             {/* ========== ШАГ 4: ИНФОРМАЦИЯ ОБ ОБЪЕКТЕ ========== */}
             {/* Адрес, кадастр, характеристики, нагрузка */}
             {/* Появляется после начала заполнения данных заявителя */}
             {selectedServiceId && showStep3 && (
-                <ForeStepOfInfoObj
-                    tabsState={tabsState}
-                    updateCommon={updateCommon}
-                    setIsSelectedForeStep={setShowStep4}
-                    selectedServiceName={
-                        services.find((s) => s.id === Number(selectedServiceId))?.name
-                    }
-                />
+                <LazyErrorBoundary>
+                    <ForeStepOfInfoObj
+                        tabsState={tabsState}
+                        updateCommon={updateCommon}
+                        setIsSelectedForeStep={setShowStep4}
+                        selectedServiceName={
+                            services.find((s) => s.id === Number(selectedServiceId))?.name
+                        }
+                    />
+                </LazyErrorBoundary>
             )}
 
             {/* ========== ШАГ 5: ЗАГРУЗКА ДОКУМЕНТОВ И ОТПРАВКА ========== */}
             {/* Список документов зависит от типа заявки (ТУ/ДП) */}
             {/* В режиме "готовая заявка" показывается сразу */}
             {(isReadyApplication || showStep4) && (
-                <DocumentsUploadForm
-                    isReadyApplication={isReadyApplication}
-                    onSubmit={handleSubmit}
-                    requestType={requestType || 'tu'}
-                    serviceId={selectedServiceId ? Number(selectedServiceId) : undefined}
-                />
+                <LazyErrorBoundary>
+                    <DocumentsUploadForm
+                        isReadyApplication={isReadyApplication}
+                        onSubmit={handleSubmit}
+                        requestType={requestType || 'tu'}
+                        serviceId={selectedServiceId ? Number(selectedServiceId) : undefined}
+                    />
+                </LazyErrorBoundary>
             )}
         </form>
     )

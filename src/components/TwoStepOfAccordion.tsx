@@ -16,14 +16,7 @@
 
 import { Dispatch, SetStateAction, useState } from 'react'
 import type { AccordionT } from '@/types'
-import {
-    Accordion,
-    AccordionContent,
-    AccordionItem,
-    AccordionTrigger,
-} from './ui/accordion'
-import { Checkbox } from './ui/checkbox'
-import { Label } from './ui/label'
+import { AccordionItemComponent } from './TwoStepOfAccordion/AccordionItem'
 
 /**
  * Props компонента TwoStepOfAccordion
@@ -74,46 +67,17 @@ const TwoStepOfAccordion = ({
             </h2>
             
             {/* Список оснований обращения */}
-            {accordion.map(({ id, name }) => (
-                <div
-                    key={id}
-                    className="flex items-start gap-3 w-full"
-                >
-                    {/* Чекбокс для выбора основания */}
-                    <Checkbox
-                        id={`checkbox-${id}`}
-                        checked={selectedItem === id}
-                        onCheckedChange={() => {
-                            handleCheckboxChange(id)
-                            // Уведомляем родительский компонент о выборе
-                            setIsSelectedTwoStep(
-                                (isSelectedTwoStep) => !isSelectedTwoStep,
-                            )
-                            // Обновляем ID основания в данных формы
-                            updateCommon('requestReasonId', id)
-                        }}
-                        className="mt-3"
-                    />
-
-                    {/* Аккордеон с текстом основания */}
-                    <Accordion type="single" collapsible className="flex-1">
-                        <AccordionItem value={`item-${id}`}>
-                            <AccordionTrigger>
-                                {/* Краткий текст (первые 70 символов) */}
-                                <Label
-                                    htmlFor={`checkbox-${id}`}
-                                    className="text-left flex-1 cursor-pointer font-normal"
-                                >
-                                    {name.slice(0, 70) + `...`}
-                                </Label>
-                            </AccordionTrigger>
-                            {/* Полный текст основания при раскрытии */}
-                            <AccordionContent className="text-left p-3">
-                                {name}
-                            </AccordionContent>
-                        </AccordionItem>
-                    </Accordion>
-                </div>
+            {accordion.map((item) => (
+                <AccordionItemComponent
+                    key={item.id}
+                    item={item}
+                    isSelected={selectedItem === item.id}
+                    onSelect={(id) => {
+                        handleCheckboxChange(id)
+                        setIsSelectedTwoStep((prev) => !prev)
+                        updateCommon('requestReasonId', id)
+                    }}
+                />
             ))}
         </div>
     )

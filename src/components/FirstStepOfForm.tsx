@@ -20,14 +20,22 @@
  * @module FirstStepOfForm
  */
 
-import { useState, useCallback } from 'react'
-import { Field, FieldLabel } from './ui/field'
-import { ServiceCheckboxGroup } from './ui/service-checkbox'
-import { InputWithTooltip, TextareaField } from './ui/input-with-tooltip'
-import { SERVICE_TITLES, PROVIDING_TYPES } from '@/constants/services'
+import { useState, useCallback, useMemo } from 'react'
 import DialogForm from './DialogForm'
 import type { ServiceT } from '@/types'
 import type { UpdateFormFn } from '@/utils/form'
+import {
+    NewConnectionSection,
+    AdjacentOwnerSection,
+    ReconstructionSection,
+    YardNetworksSection,
+    TcCorrectionSection,
+    TcAnnulmentSection,
+    NetworkRemovalSection,
+    MeterInstallationSection,
+    InfoOnlySection,
+} from './FirstStepOfForm/ServiceSections'
+import { createServiceSectionsConfig } from '@/config/serviceSections'
 
 /**
  * Props компонента FirstStepOfForm
@@ -42,51 +50,6 @@ interface FirstStepOfFormProps {
     selectedServiceId: string
 }
 
-/**
- * Базовые опции для выбора типа подключения (водоснабжение/водоотведение)
- * Используются в нескольких секциях формы
- */
-const WATER_OPTIONS = [
-    {
-        id: 'water-supply',
-        label: 'Водоснабжения',
-        value: 'Водоснабжения',
-        providingType: PROVIDING_TYPES.WATER_SUPPLY as 0 | 1, // 0 = водоснабжение
-    },
-    {
-        id: 'water-disposal',
-        label: 'Водоотведения',
-        value: 'Водоотведения',
-        providingType: PROVIDING_TYPES.WATER_DISPOSAL as 0 | 1, // 1 = водоотведение
-    },
-]
-
-/**
- * Опции для нового подключения
- * Отличаются от базовых более подробными метками
- */
-const NEW_CONNECTION_OPTIONS = [
-    {
-        id: 'cold-water',
-        label: 'К сетям холодного водоснабжения',
-        value: 'К сетям холодного водоснабжения',
-        providingType: PROVIDING_TYPES.WATER_SUPPLY as 0 | 1,
-    },
-    {
-        id: 'sewerage',
-        label: 'Водоотведения',
-        value: 'Водоотведения',
-        providingType: PROVIDING_TYPES.WATER_DISPOSAL as 0 | 1,
-    },
-]
-
-/**
- * Опции для установки приборов учета
- */
-const METER_OPTIONS = [
-    { id: 'meter-water', label: 'Воды', value: 'Воды' },
-    { id: 'meter-sewerage', label: 'Сточных вод', value: 'Сточных вод' },
-]
 
 /**
  * Компонент деталей услуги подключения
@@ -199,227 +162,68 @@ export function FirstStepOfForm({
 
     const serviceName = selectedService.name
 
+    // Декларативная конфигурация секций услуг
+    const sectionsConfig = useMemo(
+        () =>
+            createServiceSectionsConfig({
+                NewConnectionSection,
+                AdjacentOwnerSection,
+                ReconstructionSection,
+                YardNetworksSection,
+                TcCorrectionSection,
+                TcAnnulmentSection,
+                NetworkRemovalSection,
+                MeterInstallationSection,
+                InfoOnlySection,
+                DialogForm,
+            }),
+        [],
+    )
+
+    // Состояние для генерации пропсов
+    const sectionState = useMemo(
+        () => ({
+            selections,
+            tcNumber,
+            tcDate,
+            reason,
+            diameter,
+            handleToggle,
+            handleDiameterChange,
+            handleTcNumberChange,
+            handleTcDateChange,
+            setReason,
+        }),
+        [
+            selections,
+            tcNumber,
+            tcDate,
+            reason,
+            diameter,
+            handleToggle,
+            handleDiameterChange,
+            handleTcNumberChange,
+            handleTcDateChange,
+        ],
+    )
+
+    // Находим конфигурацию для текущей услуги
+    const currentSection = sectionsConfig.find(
+        (config) => config.serviceName === serviceName,
+    )
+
+    // Рендерим компонент на основе конфигурации
+    const sectionComponent = currentSection
+        ? (() => {
+              const SectionComponent = currentSection.component
+              const props = currentSection.getProps(sectionState)
+              return <SectionComponent {...props} />
+          })()
+        : null
+
     return (
         <div className="mt-10 w-64 sm:w-80 lg:w-96 xl:w-110 pb-10 mx-auto text-center">
-            {/* Новое подключение */}
-            {serviceName === SERVICE_TITLES.NEW_CONNECTION && (
-                <Field className="mt-5 w-full border-b-0">
-                    <FieldLabel>Новое подключение</FieldLabel>
-                    <ServiceCheckboxGroup
-                        title="Тип подключения"
-                        options={NEW_CONNECTION_OPTIONS}
-                        selectedValues={selections.newConnection}
-                        onToggle={(value, type) =>
-                            handleToggle('newConnection', value, type)
-                        }
-                        className="mt-2"
-                    />
-                </Field>
-            )}
-
-            {/* Подключение к сетям смежного владельца */}
-            {serviceName === SERVICE_TITLES.ADJACENT_OWNER && (
-                <Field className="mt-5 w-64">
-                    <FieldLabel>Подключение к сетям смежного владельца</FieldLabel>
-                    <ServiceCheckboxGroup
-                        title="Тип подключения"
-                        options={WATER_OPTIONS.map((o) => ({
-                            ...o,
-                            id: `adjacent-${o.id}`,
-                        }))}
-                        selectedValues={selections.adjacent}
-                        onToggle={(value, type) =>
-                            handleToggle('adjacent', value, type)
-                        }
-                        className="mt-2"
-                    />
-                </Field>
-            )}
-
-            {/* Реконструкция существующих сетей */}
-            {serviceName === SERVICE_TITLES.RECONSTRUCTION && (
-                <Field className="mt-5 w-full">
-                    <FieldLabel>
-                        Реконструкция существующих сетей без изменения
-                        потребляемой нагрузки
-                    </FieldLabel>
-                    <div className="flex flex-col gap-3 mt-2">
-                        <ServiceCheckboxGroup
-                            title="Тип сетей"
-                            options={WATER_OPTIONS.map((o) => ({
-                                ...o,
-                                id: `recon-${o.id}`,
-                            }))}
-                            selectedValues={selections.reconstruction}
-                            onToggle={(value) =>
-                                handleToggle('reconstruction', value)
-                            }
-                        />
-
-                        {selections.reconstruction.length > 0 && (
-                            <InputWithTooltip
-                                placeholder={`Укажите диаметр ${selections.reconstruction[0].toLowerCase()} (мм)`}
-                                tooltip="Диаметр существующих сетей в миллиметрах"
-                                type="number"
-                                value={diameter}
-                                onChange={handleDiameterChange}
-                            />
-                        )}
-                    </div>
-                </Field>
-            )}
-
-            {/* Подключение к внутридворовым сетям */}
-            {serviceName === SERVICE_TITLES.YARD_NETWORKS && (
-                <Field className="mt-5 w-64">
-                    <FieldLabel>
-                        Подключение к внутридворовым (внутриплощадочным) сетям
-                    </FieldLabel>
-                    <ServiceCheckboxGroup
-                        title="Тип подключения"
-                        options={WATER_OPTIONS.map((o) => ({
-                            ...o,
-                            id: `yard-${o.id}`,
-                        }))}
-                        selectedValues={selections.yard}
-                        onToggle={(value, type) =>
-                            handleToggle('yard', value, type)
-                        }
-                        className="mt-2"
-                    />
-                </Field>
-            )}
-
-            {/* Корректировка технических условий */}
-            {serviceName === SERVICE_TITLES.CORRECTION && (
-                <div className="mt-5 w-full">
-                    <FieldLabel className="mb-3">
-                        Корректировка технических условий
-                    </FieldLabel>
-                    <InputWithTooltip
-                        placeholder="Введите номер ТУ"
-                        tooltip="Номер технических условий для корректировки"
-                        type="number"
-                        value={tcNumber}
-                        onChange={handleTcNumberChange}
-                    />
-                    <InputWithTooltip
-                        placeholder="Дата выдачи ТУ"
-                        tooltip="Дата выдачи технических условий"
-                        type="date"
-                        value={tcDate}
-                        onChange={handleTcDateChange}
-                    />
-                    <TextareaField
-                        placeholder="В части (укажите что нужно скорректировать)"
-                        value={reason}
-                        onChange={setReason}
-                    />
-                </div>
-            )}
-
-            {/* Аннулирование технических условий */}
-            {serviceName === SERVICE_TITLES.ANNULMENT && (
-                <div className="mt-5 w-full">
-                    <FieldLabel className="mb-3">
-                        Аннулирование технических условий
-                    </FieldLabel>
-                    <InputWithTooltip
-                        placeholder="Введите номер ТУ"
-                        tooltip="Номер технических условий для аннулирования"
-                        type="number"
-                        value={tcNumber}
-                        onChange={handleTcNumberChange}
-                    />
-                    <InputWithTooltip
-                        placeholder="Дата выдачи ТУ"
-                        tooltip="Дата выдачи технических условий"
-                        type="date"
-                        value={tcDate}
-                        onChange={handleTcDateChange}
-                    />
-                    <TextareaField
-                        placeholder="Укажите причину аннулирования"
-                        value={reason}
-                        onChange={setReason}
-                    />
-                </div>
-            )}
-
-            {/* Вынос сетей */}
-            {serviceName === SERVICE_TITLES.NETWORK_REMOVAL && (
-                <Field className="mt-5 w-full">
-                    <FieldLabel>Вынос сетей</FieldLabel>
-                    <div className="flex flex-col gap-3 mt-2">
-                        <ServiceCheckboxGroup
-                            title="Тип сетей"
-                            options={WATER_OPTIONS.map((o) => ({
-                                ...o,
-                                id: `removal-${o.id}`,
-                            }))}
-                            selectedValues={selections.networkRemoval}
-                            onToggle={(value, type) =>
-                                handleToggle('networkRemoval', value, type)
-                            }
-                        />
-
-                        {selections.networkRemoval.length > 0 && (
-                            <InputWithTooltip
-                                placeholder={`Укажите диаметр ${selections.networkRemoval[0].toLowerCase()} (мм)`}
-                                tooltip="Диаметр выносимых сетей в миллиметрах"
-                                type="number"
-                                value={diameter}
-                                onChange={handleDiameterChange}
-                            />
-                        )}
-                    </div>
-                </Field>
-            )}
-
-            {/* Установка прибора учета */}
-            {serviceName === SERVICE_TITLES.METER_INSTALLATION && (
-                <Field className="mt-5 w-64">
-                    <FieldLabel>На установку прибора учета</FieldLabel>
-                    <ServiceCheckboxGroup
-                        title="Тип прибора"
-                        options={METER_OPTIONS}
-                        selectedValues={selections.meter}
-                        onToggle={(value) => handleToggle('meter', value)}
-                        className="mt-2"
-                    />
-                </Field>
-            )}
-
-            {/* Подключение для нужд пожаротушения */}
-            {serviceName === SERVICE_TITLES.FIREFIGHTING && (
-                <Field className="mt-5 w-full">
-                    <FieldLabel>
-                        Подключение к сетям холодного водоснабжения для нужд
-                        пожаротушения
-                    </FieldLabel>
-                    <p className="text-sm text-muted-foreground mt-2">
-                        Укажите параметры пожаротушения в разделе «Информация об
-                        объекте»
-                    </p>
-                </Field>
-            )}
-
-            {/* Временное водоснабжение стройплощадки */}
-            {serviceName === SERVICE_TITLES.TEMPORARY_SUPPLY && (
-                <Field className="mt-5 w-full">
-                    <FieldLabel>
-                        Подключение к сетям холодного водоснабжения для
-                        временного водоснабжения строительной площадки
-                    </FieldLabel>
-                    <p className="text-sm text-muted-foreground mt-2">
-                        Укажите планируемую нагрузку водоснабжения в разделе
-                        «Информация об объекте»
-                    </p>
-                </Field>
-            )}
-
-            {/* Иное */}
-            {serviceName === SERVICE_TITLES.OTHER && <DialogForm />}
+            {sectionComponent}
         </div>
     )
 }
