@@ -5,9 +5,10 @@
     "type": "module",
     "scripts": {
         "dev": "vite",
-        "build": "tsc -b && vite build",
-        "build:legacy": "tsc -b && cross-env LEGACY_BUILD=true vite build",
-        "build:analyze": "tsc -b && vite build --mode analyze",
+        "build": "tsc -b && vite build && npm run copy:webconfig",
+        "build:legacy": "tsc -b && cross-env LEGACY_BUILD=true vite build && npm run copy:webconfig",
+        "build:analyze": "tsc -b && vite build --mode analyze && npm run copy:webconfig",
+        "copy:webconfig": "copy web.config dist\\web.config",
         "lint": "eslint .",
         "preview": "vite preview",
         "preview:legacy": "cross-env LEGACY_BUILD=true vite preview"
