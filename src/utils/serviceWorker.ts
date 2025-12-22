@@ -5,8 +5,23 @@
 /**
  * Регистрирует Service Worker для кэширования ресурсов
  * Вызывается в main.tsx после монтирования приложения
+ * 
+ * Примечание: Service Worker работает только на HTTPS или localhost
  */
 export function registerServiceWorker() {
+    // Service Worker работает только на HTTPS или localhost
+    const isSecureContext = 
+        window.location.protocol === 'https:' ||
+        window.location.hostname === 'localhost' ||
+        window.location.hostname === '127.0.0.1'
+
+    if (!isSecureContext) {
+        console.warn(
+            '[SW] Service Worker requires HTTPS or localhost. Skipping registration.',
+        )
+        return
+    }
+
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
             navigator.serviceWorker

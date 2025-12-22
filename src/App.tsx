@@ -266,7 +266,6 @@ function App() {
     if (!requestType) {
         // Разделяем кнопки на основные и готовые заявки
         const mainButtons = INITIAL_SCREEN_CONFIG.filter((btn) => !btn.isReady)
-        const readyButtons = INITIAL_SCREEN_CONFIG.filter((btn) => btn.isReady)
 
         return (
             <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-4">
@@ -292,20 +291,6 @@ function App() {
                         </Button>
                     ))}
 
-                    {readyButtons.length > 0 && <div className="border-t my-4" />}
-
-                    {/* Кнопки для готовых заявок — только загрузка документов */}
-                    {readyButtons.map((button) => (
-                        <Button
-                            key={`${button.requestType}-${button.isReady}`}
-                            size="lg"
-                            variant={button.variant || 'outline'}
-                            className="w-full"
-                            onClick={() => startForm(button.requestType, button.isReady)}
-                        >
-                            {button.label}
-                        </Button>
-                    ))}
                 </div>
             </div>
         )

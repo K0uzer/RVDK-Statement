@@ -92,32 +92,59 @@ export default defineConfig({
                 chunkFileNames: 'assets/[name]-[hash].js',
                 assetFileNames: 'assets/[name]-[hash].[ext]',
                 manualChunks: (id) => {
-                    // React и React DOM в отдельный чанк
+                    // ВАЖНО: Порядок проверок критичен для правильной загрузки зависимостей
+                    
+                    // 1. React и React DOM в отдельный чанк (загружается первым)
                     if (id.includes('react') || id.includes('react-dom')) {
                         return 'react-vendor'
                     }
 
-                    // Все Radix UI компоненты в один чанк
+                    // 2. Все Radix UI компоненты (зависят от React)
                     if (id.includes('@radix-ui')) {
                         return 'radix-ui'
                     }
 
-                    // Axios и HTTP-логика
+                    // 3. Axios и HTTP-логика (не зависит от React)
                     if (id.includes('axios')) {
                         return 'http-client'
                     }
 
-                    // UI компоненты (shadcn)
+                    // 4. React-специфичные библиотеки (должны загружаться после React)
+                    // Библиотеки, которые явно зависят от React
+                    const reactDependentLibs = [
+                        'react-hook-form',
+                        'react-dropzone',
+                        'react-day-picker',
+                        'react-resizable-panels',
+                        'embla-carousel-react',
+                        'recharts',
+                        'sonner',
+                        'next-themes',
+                        'lucide-react',
+                        'class-variance-authority',
+                        'tailwind-merge',
+                        'cmdk',
+                        'input-otp',
+                        'vaul',
+                    ]
+                    
+                    // Если библиотека зависит от React, включаем её в react-vendor
+                    // чтобы гарантировать, что React загрузится первым
+                    if (reactDependentLibs.some(lib => id.includes(lib))) {
+                        return 'react-vendor'
+                    }
+
+                    // 5. UI компоненты (shadcn) - зависят от React
                     if (id.includes('/components/ui/')) {
                         return 'ui-components'
                     }
 
-                    // Формы заявителей
+                    // 6. Формы заявителей
                     if (id.includes('/components/forms/')) {
                         return 'form-components'
                     }
 
-                    // Шаги формы (lazy loaded)
+                    // 7. Шаги формы (lazy loaded)
                     if (id.includes('/components/FirstStepOfForm') ||
                         id.includes('/components/TwoStepOfAccordion') ||
                         id.includes('/components/ThreeStepOfGroupButton') ||
@@ -127,22 +154,23 @@ export default defineConfig({
                         return 'form-steps'
                     }
 
-                    // Утилиты и константы
+                    // 8. Утилиты и константы
                     if (id.includes('/utils/') || id.includes('/constants/')) {
                         return 'utils'
                     }
 
-                    // API и конфигурация
+                    // 9. API и конфигурация
                     if (id.includes('/api/') || id.includes('/config/')) {
                         return 'api-config'
                     }
 
-                    // Хуки
+                    // 10. Хуки
                     if (id.includes('/hooks/')) {
                         return 'hooks'
                     }
 
-                    // Остальные node_modules
+                    // 11. Остальные node_modules (только те, что НЕ зависят от React)
+                    // Это безопасные библиотеки типа zod, date-fns и т.д.
                     if (id.includes('node_modules')) {
                         return 'vendor'
                     }
