@@ -169,10 +169,22 @@ export default defineConfig({
                         return 'hooks'
                     }
 
-                    // 11. Остальные node_modules (только те, что НЕ зависят от React)
-                    // Это безопасные библиотеки типа zod, date-fns и т.д.
+                    // 11. Остальные node_modules
+                    // ВАЖНО: По умолчанию все библиотеки из node_modules идут в react-vendor,
+                    // кроме явно не-React библиотек (axios, date-fns, zod, tailwindcss)
+                    // Это гарантирует, что React загрузится первым
                     if (id.includes('node_modules')) {
-                        return 'vendor'
+                        // Список библиотек, которые точно НЕ зависят от React
+                        const nonReactLibs = ['axios', 'date-fns', 'zod', 'tailwindcss']
+                        
+                        // Если это не-React библиотека, идем в vendor
+                        if (nonReactLibs.some(lib => id.includes(lib))) {
+                            return 'vendor'
+                        }
+                        
+                        // Все остальные библиотеки из node_modules идут в react-vendor
+                        // чтобы гарантировать правильный порядок загрузки
+                        return 'react-vendor'
                     }
                 },
             },

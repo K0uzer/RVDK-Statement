@@ -52,6 +52,26 @@ function Button({
     <Comp
       data-slot="button"
       className={cn(buttonVariants({ variant, size, className }))}
+      style={{
+        // Fallback для старых браузеров без CSS переменных
+        ...(variant === 'default' && {
+          backgroundColor: 'var(--primary, #171717)',
+          color: 'var(--primary-foreground, #fafafa)',
+        }),
+        ...(variant === 'outline' && {
+          backgroundColor: 'var(--background, #ffffff)',
+          color: 'var(--foreground, #0a0a0a)',
+          borderColor: 'var(--border, #e5e5e5)',
+        }),
+        ...(variant === 'ghost' && {
+          backgroundColor: 'transparent',
+          color: 'var(--foreground, #0a0a0a)',
+        }),
+        cursor: 'pointer',
+        pointerEvents: 'auto',
+        position: 'relative',
+        zIndex: 1,
+      } as React.CSSProperties}
       {...props}
     />
   )

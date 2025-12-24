@@ -93,9 +93,6 @@ export function TrusteeFields({ basePath, updateCommon }: TrusteeFieldsProps) {
                     updateCommon(`${basePath}.trustee.trustDateTo`, e.target.value)
                 }
             />
-            <FieldDescription>
-                Заполняется, если заявление подает представитель
-            </FieldDescription>
         </Field>
     )
 }

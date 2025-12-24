@@ -29,7 +29,7 @@
     <!-- Основной скрипт (для современных браузеров) -->
     <script type="module" src="/src/main.tsx"></script>
     
-    <!-- Скрипт проверки поддержки браузера -->
+    <!-- Скрипт проверки поддержки браузера и применения fallback стилей -->
     <script>
       (function() {
         // Проверяем поддержку современных функций
@@ -38,6 +38,194 @@
           'Promise' in window &&
           'assign' in Object &&
           'includes' in Array.prototype;
+        
+        // Проверяем поддержку CSS переменных (IE11 не поддерживает)
+        var supportsCSSVariables = false;
+        try {
+          var testEl = document.createElement('div');
+          testEl.style.setProperty('--test', '1');
+          supportsCSSVariables = testEl.style.getPropertyValue('--test') === '1';
+        } catch (e) {
+          supportsCSSVariables = false;
+        }
+        
+        // Если браузер не поддерживает CSS переменные, применяем fallback стили
+        if (!supportsCSSVariables) {
+          document.documentElement.classList.add('no-css-variables');
+          
+          // Применяем inline стили для критических компонентов
+          var style = document.createElement('style');
+          style.id = 'legacy-browser-styles';
+          style.textContent = `
+            /* Fallback стили для браузеров без поддержки CSS переменных (IE11, старые браузеры) */
+            
+            /* Селекты - принудительные стили */
+            [data-slot="select-trigger"],
+            button[data-slot="select-trigger"] {
+              background-color: #ffffff !important;
+              color: #0a0a0a !important;
+              border: 1px solid #e5e5e5 !important;
+              padding: 0.5rem 0.75rem !important;
+              border-radius: 0.375rem !important;
+              cursor: pointer !important;
+              font-size: 0.875rem !important;
+              min-height: 2.25rem !important;
+              display: flex !important;
+              align-items: center !important;
+              justify-content: space-between !important;
+              pointer-events: auto !important;
+              position: relative !important;
+              z-index: 1 !important;
+            }
+            
+            [data-slot="select-trigger"]:hover {
+              border-color: #a3a3a3 !important;
+              background-color: #fafafa !important;
+            }
+            
+            [data-slot="select-trigger"]:focus,
+            [data-slot="select-trigger"]:focus-visible {
+              outline: 2px solid #525252 !important;
+              outline-offset: 2px !important;
+              border-color: #525252 !important;
+            }
+            
+            [data-slot="select-trigger"]:disabled {
+              opacity: 0.5 !important;
+              cursor: not-allowed !important;
+            }
+            
+            /* Контент селекта (выпадающий список) */
+            [data-slot="select-content"] {
+              background-color: #ffffff !important;
+              color: #0a0a0a !important;
+              border: 1px solid #e5e5e5 !important;
+              border-radius: 0.375rem !important;
+              box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+              padding: 0.25rem !important;
+              z-index: 50 !important;
+              position: relative !important;
+              pointer-events: auto !important;
+            }
+            
+            /* Элементы селекта */
+            [data-slot="select-item"] {
+              background-color: transparent !important;
+              color: #0a0a0a !important;
+              padding: 0.375rem 0.5rem !important;
+              border-radius: 0.125rem !important;
+              cursor: pointer !important;
+              font-size: 0.875rem !important;
+              pointer-events: auto !important;
+            }
+            
+            [data-slot="select-item"]:hover,
+            [data-slot="select-item"]:focus {
+              background-color: #f5f5f5 !important;
+              color: #0a0a0a !important;
+            }
+            
+            [data-slot="select-item"][data-disabled="true"] {
+              opacity: 0.5 !important;
+              cursor: not-allowed !important;
+              pointer-events: none !important;
+            }
+            
+            /* Кнопки - принудительные стили */
+            [data-slot="button"],
+            button[data-slot="button"] {
+              background-color: #171717 !important;
+              color: #fafafa !important;
+              border: 1px solid #171717 !important;
+              padding: 0.5rem 1rem !important;
+              border-radius: 0.375rem !important;
+              cursor: pointer !important;
+              font-size: 0.875rem !important;
+              font-weight: 500 !important;
+              pointer-events: auto !important;
+              position: relative !important;
+              z-index: 1 !important;
+              display: inline-flex !important;
+              align-items: center !important;
+              justify-content: center !important;
+            }
+            
+            [data-slot="button"]:hover,
+            button[data-slot="button"]:hover {
+              background-color: #262626 !important;
+            }
+            
+            [data-slot="button"]:disabled,
+            button[data-slot="button"]:disabled {
+              opacity: 0.5 !important;
+              cursor: not-allowed !important;
+              pointer-events: none !important;
+            }
+            
+            /* Input поля */
+            input[type="text"],
+            input[type="email"],
+            input[type="tel"],
+            input[type="date"],
+            input[type="number"],
+            textarea {
+              background-color: #ffffff !important;
+              color: #0a0a0a !important;
+              border: 1px solid #e5e5e5 !important;
+              padding: 0.5rem 0.75rem !important;
+              border-radius: 0.375rem !important;
+              font-size: 0.875rem !important;
+              pointer-events: auto !important;
+            }
+            
+            input:focus,
+            textarea:focus {
+              outline: 2px solid #525252 !important;
+              outline-offset: 2px !important;
+              border-color: #525252 !important;
+            }
+            
+            /* Убеждаемся, что все интерактивные элементы кликабельны */
+            button, select, input, a, [role="button"], [data-slot="select-trigger"], [data-slot="button"] {
+              pointer-events: auto !important;
+              cursor: pointer !important;
+            }
+            
+            /* Убираем перекрывающие элементы для интерактивных элементов */
+            button, select, input, a, [role="button"], [data-slot="select-trigger"], [data-slot="button"] {
+              pointer-events: auto !important;
+            }
+            
+            /* Radix UI Portal контейнер - убеждаемся, что он видим и кликабелен */
+            [data-radix-portal] {
+              pointer-events: auto !important;
+              z-index: 50 !important;
+            }
+            
+            [data-radix-select-content] {
+              pointer-events: auto !important;
+              z-index: 50 !important;
+            }
+            
+            /* Убеждаемся, что SVG иконки не блокируют клики */
+            [data-slot="select-trigger"] svg,
+            [data-slot="button"] svg {
+              pointer-events: none !important;
+            }
+            
+            /* Исправляем проблему с белым фоном - принудительно устанавливаем цвета */
+            body {
+              background-color: #ffffff !important;
+            }
+            
+            /* Убеждаемся, что селекты видны */
+            [data-slot="select-trigger"] {
+              visibility: visible !important;
+              opacity: 1 !important;
+            }
+          `;
+          document.head.appendChild(style);
+        }
         
         // Показываем предупреждение для очень старых браузеров
         if (!isModernBrowser) {
