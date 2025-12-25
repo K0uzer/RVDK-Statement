@@ -30,17 +30,17 @@ export const INITIAL_SCREEN_CONFIG: InitialScreenButton[] = [
         requestType: 'dp',
         isReady: false,
     },
-    {
-        label: 'Заявка ТУ готова (только документы)',
-        variant: 'outline',
-        requestType: 'tu',
-        isReady: true,
-    },
-    {
-        label: 'Заявка ДП готова (только документы)',
-        variant: 'outline',
-        requestType: 'dp',
-        isReady: true,
-    },
+    // {
+    //     label: 'Заявка ТУ готова (только документы)',
+    //     variant: 'outline',
+    //     requestType: 'tu',
+    //     isReady: true,
+    // },
+    // {
+    //     label: 'Заявка ДП готова (только документы)',
+    //     variant: 'outline',
+    //     requestType: 'dp',
+    //     isReady: true,
+    // },
 ] as const
 
