@@ -48,30 +48,63 @@ function Button({
   }) {
   const Comp = asChild ? Slot : "button"
 
+  // Fallback цвета для старых браузеров (Windows 7, IE11) без поддержки CSS переменных
+  const getFallbackStyles = (): React.CSSProperties => {
+    const baseStyles: React.CSSProperties = {
+      cursor: 'pointer',
+      pointerEvents: 'auto',
+      position: 'relative',
+      zIndex: 1,
+    }
+
+    switch (variant) {
+      case 'default':
+        return {
+          ...baseStyles,
+          backgroundColor: '#090909', // --primary fallback
+          color: '#fafafa', // --primary-foreground fallback
+        }
+      case 'destructive':
+        return {
+          ...baseStyles,
+          backgroundColor: '#ef4444', // --destructive fallback
+          color: '#ffffff',
+        }
+      case 'outline':
+        return {
+          ...baseStyles,
+          backgroundColor: '#ffffff', // --background fallback
+          color: '#0a0a0a', // --foreground fallback
+          borderColor: '#e5e5e5', // --border fallback
+        }
+      case 'secondary':
+        return {
+          ...baseStyles,
+          backgroundColor: '#f5f5f5', // --secondary fallback
+          color: '#090909', // --secondary-foreground fallback
+        }
+      case 'ghost':
+        return {
+          ...baseStyles,
+          backgroundColor: 'transparent',
+          color: '#0a0a0a', // --foreground fallback
+        }
+      case 'link':
+        return {
+          ...baseStyles,
+          backgroundColor: 'transparent',
+          color: '#090909', // --primary fallback
+        }
+      default:
+        return baseStyles
+    }
+  }
+
   return (
     <Comp
       data-slot="button"
       className={cn(buttonVariants({ variant, size, className }))}
-      style={{
-        // Fallback для старых браузеров без CSS переменных
-        ...(variant === 'default' && {
-          backgroundColor: 'var(--primary, #171717)',
-          color: 'var(--primary-foreground, #fafafa)',
-        }),
-        ...(variant === 'outline' && {
-          backgroundColor: 'var(--background, #ffffff)',
-          color: 'var(--foreground, #0a0a0a)',
-          borderColor: 'var(--border, #e5e5e5)',
-        }),
-        ...(variant === 'ghost' && {
-          backgroundColor: 'transparent',
-          color: 'var(--foreground, #0a0a0a)',
-        }),
-        cursor: 'pointer',
-        pointerEvents: 'auto',
-        position: 'relative',
-        zIndex: 1,
-      } as React.CSSProperties}
+      style={getFallbackStyles()}
       {...props}
     />
   )

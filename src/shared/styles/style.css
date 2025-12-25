@@ -42,29 +42,32 @@
 
 :root {
     --radius: 0.625rem;
-    --background: oklch(1 0 0);
-    --foreground: oklch(0.145 0 0);
-    --card: oklch(1 0 0);
-    --card-foreground: oklch(0.145 0 0);
-    --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.145 0 0);
-    --primary: oklch(0.205 0 0);
-    --primary-foreground: oklch(0.985 0 0);
-    --secondary: oklch(0.97 0 0);
-    --secondary-foreground: oklch(0.205 0 0);
-    --muted: oklch(0.97 0 0);
-    --muted-foreground: oklch(0.556 0 0);
-    --accent: oklch(0.97 0 0);
-    --accent-foreground: oklch(0.205 0 0);
-    --destructive: oklch(0.577 0.245 27.325);
-    --border: oklch(0.922 0 0);
-    --input: oklch(0.922 0 0);
-    --ring: oklch(0.708 0 0);
-    --chart-1: oklch(0.646 0.222 41.116);
-    --chart-2: oklch(0.6 0.118 184.704);
-    --chart-3: oklch(0.398 0.07 227.392);
-    --chart-4: oklch(0.828 0.189 84.429);
-    --chart-5: oklch(0.769 0.188 70.08);
+    
+    /* Fallback цвета для старых браузеров (Windows 7, IE11) - hex формат */
+    --background: #ffffff;
+    --foreground: #0a0a0a;
+    --card: #ffffff;
+    --card-foreground: #0a0a0a;
+    --popover: #ffffff;
+    --popover-foreground: #0a0a0a;
+    --primary: #090909;
+    --primary-foreground: #fafafa;
+    --secondary: #f5f5f5;
+    --secondary-foreground: #090909;
+    --muted: #f5f5f5;
+    --muted-foreground: #737373;
+    --accent: #f5f5f5;
+    --accent-foreground: #090909;
+    --destructive: #ef4444;
+    --border: #e5e5e5;
+    --input: #e5e5e5;
+    --ring: #a3a3a3;
+    --chart-1: #f97316;
+    --chart-2: #3b82f6;
+    --chart-3: #8b5cf6;
+    --chart-4: #22c55e;
+    --chart-5: #eab308;
+    
     --sidebar: hsl(0 0% 98%);
     --sidebar-foreground: hsl(240 5.3% 26.1%);
     --sidebar-primary: hsl(240 5.9% 10%);
@@ -75,30 +78,56 @@
     --sidebar-ring: hsl(217.2 91.2% 59.8%);
 }
 
+/* Современные oklch цвета только для браузеров с поддержкой */
+@supports (color: oklch(0 0 0)) {
+    :root {
+        --background: oklch(1 0 0);
+        --foreground: oklch(0.145 0 0);
+        --card: oklch(1 0 0);
+        --card-foreground: oklch(0.145 0 0);
+        --popover: oklch(1 0 0);
+        --popover-foreground: oklch(0.145 0 0);
+        --primary: oklch(0.205 0 0);
+        --primary-foreground: oklch(0.985 0 0);
+        --secondary: oklch(0.97 0 0);
+        --secondary-foreground: oklch(0.205 0 0);
+        --muted: oklch(0.97 0 0);
+        --muted-foreground: oklch(0.556 0 0);
+        --accent: oklch(0.97 0 0);
+        --accent-foreground: oklch(0.205 0 0);
+        --destructive: oklch(0.577 0.245 27.325);
+        --border: oklch(0.922 0 0);
+        --input: oklch(0.922 0 0);
+        --ring: oklch(0.708 0 0);
+        --chart-1: oklch(0.646 0.222 41.116);
+        --chart-2: oklch(0.6 0.118 184.704);
+        --chart-3: oklch(0.398 0.07 227.392);
+        --chart-4: oklch(0.828 0.189 84.429);
+        --chart-5: oklch(0.769 0.188 70.08);
+    }
+}
+
 .dark {
-    --background: oklch(0.145 0 0);
-    --foreground: oklch(0.985 0 0);
-    --card: oklch(0.205 0 0);
-    --card-foreground: oklch(0.985 0 0);
-    --popover: oklch(0.205 0 0);
-    --popover-foreground: oklch(0.985 0 0);
-    --primary: oklch(0.922 0 0);
-    --primary-foreground: oklch(0.205 0 0);
-    --secondary: oklch(0.269 0 0);
-    --secondary-foreground: oklch(0.985 0 0);
-    --muted: oklch(0.269 0 0);
-    --muted-foreground: oklch(0.708 0 0);
-    --accent: oklch(0.269 0 0);
-    --accent-foreground: oklch(0.985 0 0);
-    --destructive: oklch(0.704 0.191 22.216);
-    --border: oklch(1 0 0 / 10%);
-    --input: oklch(1 0 0 / 15%);
-    --ring: oklch(0.556 0 0);
-    --chart-1: oklch(0.488 0.243 264.376);
-    --chart-2: oklch(0.696 0.17 162.48);
-    --chart-3: oklch(0.769 0.188 70.08);
-    --chart-4: oklch(0.627 0.265 303.9);
-    --chart-5: oklch(0.645 0.246 16.439);
+    /* Fallback цвета для темной темы (старые браузеры) */
+    --background: #0a0a0a;
+    --foreground: #fafafa;
+    --card: #090909;
+    --card-foreground: #fafafa;
+    --popover: #090909;
+    --popover-foreground: #fafafa;
+    --primary: #f5f5f5;
+    --primary-foreground: #090909;
+    --secondary: #262626;
+    --secondary-foreground: #fafafa;
+    --muted: #262626;
+    --muted-foreground: #a3a3a3;
+    --accent: #262626;
+    --accent-foreground: #fafafa;
+    --destructive: #f87171;
+    --border: rgba(255, 255, 255, 0.1);
+    --input: rgba(255, 255, 255, 0.15);
+    --ring: #737373;
+    
     --sidebar: hsl(240 5.9% 10%);
     --sidebar-foreground: hsl(240 4.8% 95.9%);
     --sidebar-primary: hsl(224.3 76.3% 48%);
@@ -109,6 +138,35 @@
     --sidebar-ring: hsl(217.2 91.2% 59.8%);
 }
 
+/* Современные oklch цвета для темной темы только для браузеров с поддержкой */
+@supports (color: oklch(0 0 0)) {
+    .dark {
+        --background: oklch(0.145 0 0);
+        --foreground: oklch(0.985 0 0);
+        --card: oklch(0.205 0 0);
+        --card-foreground: oklch(0.985 0 0);
+        --popover: oklch(0.205 0 0);
+        --popover-foreground: oklch(0.985 0 0);
+        --primary: oklch(0.922 0 0);
+        --primary-foreground: oklch(0.205 0 0);
+        --secondary: oklch(0.269 0 0);
+        --secondary-foreground: oklch(0.985 0 0);
+        --muted: oklch(0.269 0 0);
+        --muted-foreground: oklch(0.708 0 0);
+        --accent: oklch(0.269 0 0);
+        --accent-foreground: oklch(0.985 0 0);
+        --destructive: oklch(0.704 0.191 22.216);
+        --border: oklch(1 0 0 / 10%);
+        --input: oklch(1 0 0 / 15%);
+        --ring: oklch(0.556 0 0);
+        --chart-1: oklch(0.488 0.243 264.376);
+        --chart-2: oklch(0.696 0.17 162.48);
+        --chart-3: oklch(0.769 0.188 70.08);
+        --chart-4: oklch(0.627 0.265 303.9);
+        --chart-5: oklch(0.645 0.246 16.439);
+    }
+}
+
 @layer base {
     * {
         @apply border-border outline-ring/50;
@@ -117,3 +175,93 @@
         @apply bg-background text-foreground;
     }
 }
+
+/* ==================== FALLBACK ДЛЯ СТАРЫХ БРАУЗЕРОВ (Windows 7, IE11) ==================== */
+/* Эти правила применяются в браузерах без поддержки CSS переменных */
+/* В старых браузерах CSS переменные игнорируются, поэтому эти правила будут применяться */
+/* В новых браузерах CSS переменные из Tailwind классов переопределят эти значения */
+
+/* Fallback для кнопок - базовые стили (default variant) */
+[data-slot="button"] {
+    /* Fallback значения для браузеров без поддержки CSS переменных */
+    background-color: #090909; /* --primary fallback */
+    color: #fafafa; /* --primary-foreground fallback */
+    border-color: transparent;
+}
+
+/* Кнопка outline - имеет border класс */
+[data-slot="button"].border,
+button[class*="outline"] {
+    background-color: #ffffff; /* --background fallback */
+    color: #0a0a0a; /* --foreground fallback */
+    border-color: #e5e5e5; /* --border fallback */
+}
+
+/* Кнопка ghost */
+[data-slot="button"][class*="ghost"],
+button[class*="ghost"] {
+    background-color: transparent;
+    color: #0a0a0a; /* --foreground fallback */
+}
+
+/* Кнопка secondary */
+[data-slot="button"][class*="secondary"],
+button[class*="secondary"] {
+    background-color: #f5f5f5; /* --secondary fallback */
+    color: #090909; /* --secondary-foreground fallback */
+}
+
+/* Кнопка destructive */
+[data-slot="button"][class*="destructive"],
+button[class*="destructive"] {
+    background-color: #ef4444; /* --destructive fallback */
+    color: #ffffff;
+}
+
+/* Кнопка link */
+[data-slot="button"][class*="link"],
+button[class*="link"] {
+    background-color: transparent;
+    color: #090909; /* --primary fallback */
+}
+
+/* Hover состояния для кнопок */
+[data-slot="button"]:hover:not(:disabled),
+button:hover:not(:disabled) {
+    opacity: 0.9;
+}
+
+/* Fallback для чекбоксов - базовое состояние */
+[data-slot="checkbox"] {
+    background-color: #ffffff; /* --background fallback */
+    border-color: #e5e5e5; /* --input fallback */
+}
+
+/* Checked состояние чекбокса */
+[data-slot="checkbox"][data-state="checked"] {
+    background-color: #090909; /* --primary fallback */
+    border-color: #090909; /* --primary fallback */
+}
+
+/* Иконка в checked чекбоксе */
+[data-slot="checkbox"][data-state="checked"] [data-slot="checkbox-indicator"],
+[data-slot="checkbox"][data-state="checked"] svg,
+[data-slot="checkbox"][data-state="checked"] .lucide {
+    color: #fafafa; /* --primary-foreground fallback */
+}
+
+/* Focus состояние для чекбокса */
+[data-slot="checkbox"]:focus-visible {
+    border-color: #a3a3a3; /* --ring fallback */
+    outline: 3px solid rgba(163, 163, 163, 0.5); /* --ring fallback с прозрачностью */
+}
+
+/* Disabled состояние */
+[data-slot="button"]:disabled,
+[data-slot="checkbox"]:disabled,
+button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* ==================== КОНЕЦ FALLBACK ДЛЯ СТАРЫХ БРАУЗЕРОВ ==================== */
