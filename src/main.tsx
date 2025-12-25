@@ -2,10 +2,10 @@
 import './polyfills'
 
 import { createRoot } from 'react-dom/client'
-import './index.css'
-import './styles/style.css'
-import App from './App.tsx'
-import { registerServiceWorker } from './utils/serviceWorker'
+// Импортируем все стили из shared/styles (в правильном порядке)
+import '@/shared/styles'
+import { App } from './app/index'
+import { registerServiceWorker } from '@/shared/lib/serviceWorker'
 
 // Проверка поддержки браузера
 const checkBrowserSupport = () => {

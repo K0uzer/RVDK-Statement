@@ -12,11 +12,12 @@
   },
   "iconLibrary": "lucide",
   "aliases": {
-    "components": "@/components",
-    "utils": "@/lib/utils",
-    "ui": "@/components/ui",
-    "lib": "@/lib",
-    "hooks": "@/hooks"
+    "components": "@/shared/ui",
+    "utils": "@/shared/lib/utils",
+    "ui": "@/shared/ui",
+    "lib": "@/shared/lib",
+    "hooks": "@/shared/lib/hooks"
   },
+  "_comment": "Примечание: shadcn/ui теперь использует FSD структуру. UI компоненты находятся в src/shared/ui и экспортируются через @/shared/ui"
   "registries": {}
 }
