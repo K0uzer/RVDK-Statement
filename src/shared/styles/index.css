@@ -67,7 +67,6 @@ button:focus-visible {
     justify-content: center;
     align-items: center;
 }
-
 @media (prefers-color-scheme: light) {
     :root {
         color: #213547;
@@ -80,3 +79,4 @@ button:focus-visible {
         background-color: #f9f9f9;
     }
 }
+
