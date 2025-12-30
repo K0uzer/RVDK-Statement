@@ -25,8 +25,18 @@ export function RequestReasonAccordion({
 }: RequestReasonAccordionProps) {
     const [selectedItem, setSelectedItem] = useState<number | null>(null)
 
-    const handleCheckboxChange = (id: number) => {
-        setSelectedItem((prev) => (prev === id ? null : id))
+    const handleCheckboxChange = (id: number, checked: boolean) => {
+        if (checked) {
+            // Выбираем новый элемент
+            setSelectedItem(id)
+            updateCommon('requestReasonId', id)
+            setIsSelected(true) // Показываем следующий шаг только при выборе
+        } else {
+            // Снимаем выбор
+            setSelectedItem(null)
+            updateCommon('requestReasonId', 0)
+            setIsSelected(false) // Скрываем следующий шаг при снятии выбора
+        }
     }
 
     return (
@@ -40,10 +50,8 @@ export function RequestReasonAccordion({
                     key={item.id}
                     item={item}
                     isSelected={selectedItem === item.id}
-                    onSelect={(id) => {
-                        handleCheckboxChange(id)
-                        setIsSelected((prev) => !prev)
-                        updateCommon('requestReasonId', id)
+                    onSelect={(id, checked) => {
+                        handleCheckboxChange(id, checked)
                     }}
                 />
             ))}

@@ -10,7 +10,7 @@ import type { AccordionT } from '@/entities/request'
 interface AccordionItemProps {
     item: AccordionT
     isSelected: boolean
-    onSelect: (id: number) => void
+    onSelect: (id: number, checked: boolean) => void
 }
 
 export function AccordionItemComponent({
@@ -18,21 +18,43 @@ export function AccordionItemComponent({
     isSelected,
     onSelect,
 }: AccordionItemProps) {
+    const handleCheckboxChange = (checked: boolean) => {
+        // Вызываем onSelect только при реальном изменении состояния чекбокса
+        // Это предотвращает срабатывание при разворачивании аккордеона
+        if (checked !== isSelected) {
+            onSelect(item.id, checked)
+        }
+    }
+
+    const handleLabelClick = () => {
+        // При клике на label выбираем чекбокс
+        // НЕ предотвращаем разворачивание аккордеона - пусть он разворачивается
+        // Программно кликаем по чекбоксу
+        const checkbox = document.getElementById(`checkbox-${item.id}`) as HTMLButtonElement
+        if (checkbox) {
+            checkbox.click()
+        }
+        // НЕ вызываем preventDefault/stopPropagation, чтобы аккордеон мог развернуться
+    }
+
     return (
         <div className="flex items-start gap-3 w-full">
             <Checkbox
                 id={`checkbox-${item.id}`}
                 checked={isSelected}
-                onCheckedChange={() => onSelect(item.id)}
+                onCheckedChange={handleCheckboxChange}
                 className="mt-3"
             />
 
             <Accordion type="single" collapsible className="flex-1">
                 <AccordionItem value={`item-${item.id}`}>
-                    <AccordionTrigger>
+                    <AccordionTrigger
+                        className="hover:no-underline"
+                    >
                         <Label
                             htmlFor={`checkbox-${item.id}`}
                             className="text-left flex-1 cursor-pointer font-normal"
+                            onClick={handleLabelClick}
                         >
                             {item.name.slice(0, 70) + '...'}
                         </Label>
