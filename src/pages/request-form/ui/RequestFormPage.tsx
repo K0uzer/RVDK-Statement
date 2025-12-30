@@ -4,7 +4,7 @@
  * FSD: pages/request-form/ui - страница формы заявки
  */
 
-import { useState, useCallback, lazy } from 'react'
+import { useState, useCallback, lazy, useMemo, useEffect } from 'react'
 import { Button } from '@/shared/ui'
 import { LazyErrorBoundary } from '@/shared/ui/error-boundary'
 import { ClientInfoForm } from '@/features/fill-client-info'
@@ -17,6 +17,7 @@ import { useServices } from '@/entities/service'
 import { useRequestReasons } from '@/entities/request'
 import { useSubmitRequest } from '@/features/submit-request'
 import { initialFormData, createUpdateFn } from '@/shared/lib/form-utils'
+import { validateAllSteps, type FormValidationState } from '@/shared/lib/form-validation'
 import type { ClientType, RequestType, RequestFormData } from '@/entities/request'
 
 // Lazy компоненты
@@ -51,8 +52,81 @@ export function RequestFormPage({
     const [showStep3, setShowStep3] = useState(false)
     const [showStep4, setShowStep4] = useState(false)
     const [tabsState, setTabsState] = useState('')
+    const [clientType, setClientType] = useState<ClientType>('individual')
     const [isSubmitted, setIsSubmitted] = useState(false)
     const [submittedRequestId, setSubmittedRequestId] = useState('')
+
+    // ================== ОПРЕДЕЛЕНИЕ ТИПА КЛИЕНТА ==================
+    // Автоматически определяем тип клиента на основе заполненных данных
+    const detectedClientType = useMemo<ClientType>(() => {
+        // Проверяем, какие данные заполнены
+        if (formData.individualClient && 
+            (formData.individualClient.fullName?.firstName || 
+             formData.individualClient.firstName)) {
+            return 'individual'
+        }
+        if (formData.legalClient && 
+            (formData.legalClient.nameFull || formData.legalClient.nameShort)) {
+            return 'legal'
+        }
+        if (formData.legalClientIP && 
+            (formData.legalClientIP.fullName?.firstName || 
+             formData.legalClientIP.firstName)) {
+            return 'ip'
+        }
+        if (formData.legalClientGov && 
+            (formData.legalClientGov.nameFull || formData.legalClientGov.nameShort)) {
+            return 'gov'
+        }
+        // По умолчанию возвращаем текущий тип
+        return clientType
+    }, [formData, clientType])
+
+    // ================== ВАЛИДАЦИЯ ==================
+    // Вычисляем валидацию всех шагов на основе текущих данных формы
+    const validation = useMemo<FormValidationState>(() => {
+        return validateAllSteps(formData, detectedClientType)
+    }, [formData, detectedClientType])
+
+    // Автоматически управляем показом шагов на основе валидации
+    useEffect(() => {
+        // Шаг 1: скрываем все последующие шаги если невалиден
+        if (!validation.step1.isValid) {
+            setShowStep2(false)
+            setShowStep3(false)
+            setShowStep4(false)
+            return
+        }
+        
+        // Шаг 2: показываем/скрываем шаг 2 на основе валидации
+        if (validation.step2.isValid && formData.requestReasonId > 0) {
+            setShowStep2(true)
+        } else if (!validation.step2.isValid) {
+            setShowStep2(false)
+            setShowStep3(false)
+            setShowStep4(false)
+            return
+        }
+        
+        // Шаг 3: показываем шаг 3 если он валиден (и шаги 1 и 2 тоже валидны)
+        if (validation.step1.isValid && validation.step2.isValid && validation.step3.isValid) {
+            setShowStep3(true)
+        } else if (!validation.step3.isValid) {
+            // Скрываем шаг 4 если шаг 3 невалиден
+            setShowStep4(false)
+            return
+        }
+        
+        // Шаг 4: показываем шаг 4 если он валиден (и все предыдущие шаги тоже валидны)
+        if (validation.step1.isValid && validation.step2.isValid && validation.step3.isValid) {
+            if (validation.step4.isValid) {
+                setShowStep4(true)
+            } else {
+                // Скрываем шаг 4 если он невалиден
+                setShowStep4(false)
+            }
+        }
+    }, [validation, formData.requestReasonId])
 
     // ================== ОТПРАВКА ЗАЯВКИ ==================
     const { submitRequest } = useSubmitRequest()
@@ -138,11 +212,16 @@ export function RequestFormPage({
                         selectedServiceId={selectedServiceId}
                         onSelect={handleServiceSelect}
                     />
+                    {!validation.step1.isValid && validation.step1.errors.length > 0 && (
+                        <div className="mt-2 text-sm text-destructive text-center">
+                            {validation.step1.errors[0]}
+                        </div>
+                    )}
                 </div>
             )}
 
             {/* Шаг 1.1: Детали выбранной услуги */}
-            {selectedServiceId && !isReadyApplication && (
+            {selectedServiceId && validation.step1.isValid && !isReadyApplication && (
                 <LazyErrorBoundary>
                     <ServiceDetailsStep
                         services={services}
@@ -153,22 +232,34 @@ export function RequestFormPage({
             )}
 
             {/* Шаг 2: Основание обращения */}
-            {selectedServiceId && !isReadyApplication && (
+            {selectedServiceId && validation.step1.isValid && !isReadyApplication && (
                 <LazyErrorBoundary>
                     <RequestReasonAccordion
                         accordion={requestReasons}
                         updateCommon={updateCommon}
-                        setIsSelected={setShowStep2}
+                        setIsSelected={(value) => {
+                            // Просто сохраняем состояние выбора
+                            // Показ следующего шага будет обработан через useEffect
+                            if (!value) {
+                                setShowStep2(false)
+                            }
+                        }}
                     />
+                    {!validation.step2.isValid && validation.step2.errors.length > 0 && (
+                        <div className="mt-2 text-sm text-destructive text-center">
+                            {validation.step2.errors[0]}
+                        </div>
+                    )}
                 </LazyErrorBoundary>
             )}
 
             {/* Шаг 3: Сведения о заявителе */}
-            {selectedServiceId && showStep2 && (
+            {selectedServiceId && validation.step1.isValid && validation.step2.isValid && showStep2 && (
                 <LazyErrorBoundary>
                     <ClientInfoForm
                         updateCommon={updateCommon}
                         onClientTypeChange={(type: ClientType) => {
+                            setClientType(type)
                             const tabsStateMap: Record<ClientType, string> = {
                                 individual: 'Физ. лица',
                                 legal: 'Юр. лица',
@@ -177,27 +268,48 @@ export function RequestFormPage({
                             }
                             setTabsState(tabsStateMap[type])
                         }}
-                        onFormStarted={() => setShowStep3(true)}
+                        onFormStarted={() => {
+                            // onFormStarted вызывается при заполнении первого поля
+                            // Показ следующего шага будет обработан автоматически через useEffect
+                            // на основе валидации
+                        }}
                     />
+                    {!validation.step3.isValid && validation.step3.errors.length > 0 && (
+                        <div className="mt-2 text-sm text-destructive text-center">
+                            {validation.step3.errors[0]}
+                        </div>
+                    )}
                 </LazyErrorBoundary>
             )}
 
             {/* Шаг 4: Информация об объекте */}
-            {selectedServiceId && showStep3 && (
+            {selectedServiceId && validation.step1.isValid && validation.step2.isValid && validation.step3.isValid && showStep3 && (
                 <LazyErrorBoundary>
                     <ObjectInfoForm
                         tabsState={tabsState}
                         updateCommon={updateCommon}
-                        setIsSelectedForeStep={setShowStep4}
+                        setIsSelectedForeStep={(value) => {
+                            // setIsSelectedForeStep вызывается при заполнении первого поля
+                            // Показ следующего шага будет обработан автоматически через useEffect
+                            // на основе валидации
+                            if (!value) {
+                                setShowStep4(false)
+                            }
+                        }}
                         selectedServiceName={
                             services.find((s) => s.id === Number(selectedServiceId))?.name
                         }
                     />
+                    {!validation.step4.isValid && validation.step4.errors.length > 0 && (
+                        <div className="mt-2 text-sm text-destructive text-center">
+                            {validation.step4.errors[0]}
+                        </div>
+                    )}
                 </LazyErrorBoundary>
             )}
 
             {/* Шаг 5: Загрузка документов и отправка */}
-            {(isReadyApplication || showStep4) && (
+            {(isReadyApplication || (validation.step4.isValid && showStep4)) && (
                 <LazyErrorBoundary>
                     <DocumentsUpload
                         isReadyApplication={isReadyApplication}

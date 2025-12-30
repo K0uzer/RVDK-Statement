@@ -30,7 +30,7 @@ export function RequestReasonAccordion({
             // Выбираем новый элемент
             setSelectedItem(id)
             updateCommon('requestReasonId', id)
-            setIsSelected(true) // Показываем следующий шаг только при выборе
+            // setIsSelected будет вызван из родительского компонента после валидации
         } else {
             // Снимаем выбор
             setSelectedItem(null)
