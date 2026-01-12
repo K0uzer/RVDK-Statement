@@ -36,18 +36,23 @@ export function LegalClientForm({
             />
 
             <FormField
+                type='number'
                 label="ОГРН"
                 path={`${basePath}.ogrn`}
                 updateCommon={updateCommon}
                 placeholder="1234567890123"
+                maxLength={13}
+                minLength={13}
                 required
             />
 
             <FormField
+                type='number'
                 label="ИНН"
                 path={`${basePath}.inn`}
                 updateCommon={updateCommon}
                 placeholder="1234567890"
+                maxLength={10}
                 required
             />
 

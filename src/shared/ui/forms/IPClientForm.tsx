@@ -44,18 +44,24 @@ export function IPClientForm({
             </Field>
 
             <FormField
+                type='number'
                 label="ОГРНИП"
                 path={`${basePath}.ogrn`}
                 updateCommon={updateCommon}
                 placeholder="123456789012345"
+                maxLength={15}
+                minLength={15}
                 required
             />
 
             <FormField
+                type='number'
                 label="ИНН"
                 path={`${basePath}.inn`}
                 updateCommon={updateCommon}
                 placeholder="123456789012"
+                maxLength={12}
+                minLength={12}
                 required
             />
 

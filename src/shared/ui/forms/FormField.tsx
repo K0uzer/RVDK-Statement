@@ -17,6 +17,8 @@ interface FormFieldProps {
     min?: number
     onChangeCallback?: () => void
     parseAsNumber?: boolean
+    maxLength?: number
+    minLength?: number
 }
 
 export function FormField({
@@ -30,6 +32,8 @@ export function FormField({
     min,
     onChangeCallback,
     parseAsNumber = false,
+    maxLength,
+    minLength
 }: FormFieldProps) {
     return (
         <Field>
@@ -42,6 +46,8 @@ export function FormField({
                 type={type}
                 placeholder={placeholder}
                 min={min}
+                maxLength={maxLength}
+                minLength={minLength}
                 onChange={(e) => {
                     const value = parseAsNumber
                         ? +e.target.value
@@ -68,6 +74,7 @@ export function TrusteeFields({ basePath, updateCommon }: TrusteeFieldsProps) {
         <Field>
             <FieldLabel className="mt-5">Доверенность</FieldLabel>
             <Input
+                type='number'
                 placeholder="Номер доверенности"
                 onChange={(e) =>
                     updateCommon(`${basePath}.trustee.trustNumber`, e.target.value)
