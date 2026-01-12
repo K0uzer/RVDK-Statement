@@ -88,6 +88,58 @@ export function RequestFormPage({
         return validateAllSteps(formData, detectedClientType)
     }, [formData, detectedClientType])
 
+    // Автоматически копируем адрес регистрации в почтовый адрес после валидации
+    // Копируем только если почтовый адрес пустой и адрес регистрации валиден
+    useEffect(() => {
+        // Для физических лиц: копируем address в postalAddress
+        if (clientType === 'individual' && 
+            formData.individualClient?.address?.trim() && 
+            !formData.individualClient?.postalAddress?.trim()) {
+            // Проверяем, что адрес регистрации валиден (не пустой)
+            const addressValid = formData.individualClient.address.trim().length > 0
+            if (addressValid) {
+                updateCommon('individualClient.postalAddress', formData.individualClient.address)
+            }
+        }
+        
+        // Для юридических лиц: копируем legalAddress в postalAddress
+        if (clientType === 'legal' && 
+            formData.legalClient?.legalAddress?.trim() && 
+            !formData.legalClient?.postalAddress?.trim()) {
+            const addressValid = formData.legalClient.legalAddress.trim().length > 0
+            if (addressValid) {
+                updateCommon('legalClient.postalAddress', formData.legalClient.legalAddress)
+            }
+        }
+        
+        // Для ИП: копируем legalAddress в postalAddress
+        if (clientType === 'ip' && 
+            formData.legalClientIP?.legalAddress?.trim() && 
+            !formData.legalClientIP?.postalAddress?.trim()) {
+            const addressValid = formData.legalClientIP.legalAddress.trim().length > 0
+            if (addressValid) {
+                updateCommon('legalClientIP.postalAddress', formData.legalClientIP.legalAddress)
+            }
+        }
+        
+        // Для гос. органов: копируем legalAddress в postalAddress
+        if (clientType === 'gov' && 
+            formData.legalClientGov?.legalAddress?.trim() && 
+            !formData.legalClientGov?.postalAddress?.trim()) {
+            const addressValid = formData.legalClientGov.legalAddress.trim().length > 0
+            if (addressValid) {
+                updateCommon('legalClientGov.postalAddress', formData.legalClientGov.legalAddress)
+            }
+        }
+    }, [
+        clientType,
+        formData.individualClient?.address,
+        formData.legalClient?.legalAddress,
+        formData.legalClientIP?.legalAddress,
+        formData.legalClientGov?.legalAddress,
+        updateCommon,
+    ])
+
     // Автоматически управляем показом шагов на основе валидации
     useEffect(() => {
         // Шаг 1: скрываем все последующие шаги если невалиден

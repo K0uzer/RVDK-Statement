@@ -60,6 +60,7 @@ export function IPClientForm({
                 path={`${basePath}.inn`}
                 updateCommon={updateCommon}
                 placeholder="123456789012"
+                pattern="^\d{12}$"
                 maxLength={12}
                 minLength={12}
                 required
