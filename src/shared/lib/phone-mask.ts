@@ -1,5 +1,5 @@
 /**
- * Утилиты для работы с маской телефона
+ * Утилиты для работы с масками (телефон, СНИЛС)
  */
 
 /**
@@ -91,7 +91,167 @@ export function calculateCursorPosition(
 }
 
 /**
+ * Форматирует СНИЛС в формат XXX-XXX-XXX XX
+ * @param value - Введенное значение
+ * @returns Отформатированный СНИЛС
+ */
+export function formatSnils(value: string): string {
+    // Удаляем все символы кроме цифр
+    const numbers = value.replace(/\D/g, '')
+    
+    // Ограничиваем до 11 цифр
+    const limited = numbers.slice(0, 11)
+    
+    // Форматируем в зависимости от длины
+    if (limited.length === 0) {
+        return ''
+    } else if (limited.length <= 3) {
+        return limited
+    } else if (limited.length <= 6) {
+        return `${limited.slice(0, 3)}-${limited.slice(3)}`
+    } else if (limited.length <= 9) {
+        return `${limited.slice(0, 3)}-${limited.slice(3, 6)}-${limited.slice(6)}`
+    } else {
+        return `${limited.slice(0, 3)}-${limited.slice(3, 6)}-${limited.slice(6, 9)} ${limited.slice(9, 11)}`
+    }
+}
+
+/**
+ * Вычисляет новую позицию курсора после форматирования СНИЛС
+ * @param oldValue - Старое значение
+ * @param newValue - Новое отформатированное значение
+ * @param oldCursorPosition - Старая позиция курсора
+ * @returns Новая позиция курсора
+ */
+export function calculateSnilsCursorPosition(
+    oldValue: string,
+    newValue: string,
+    oldCursorPosition: number,
+): number {
+    // Если новое значение пустое, курсор в начале
+    if (!newValue) {
+        return 0
+    }
+    
+    // Подсчитываем количество цифр до позиции курсора в старом значении
+    const digitsBeforeCursor = oldValue
+        .slice(0, oldCursorPosition)
+        .replace(/\D/g, '').length
+    
+    // Если цифр нет, курсор в начале
+    if (digitsBeforeCursor === 0) {
+        return 0
+    }
+    
+    // Находим позицию в новом значении, где находится эта же цифра
+    let digitCount = 0
+    for (let i = 0; i < newValue.length; i++) {
+        if (/\d/.test(newValue[i])) {
+            digitCount++
+            // Если достигли нужного количества цифр, ставим курсор после этой цифры
+            if (digitCount === digitsBeforeCursor) {
+                // Если следующий символ - форматирующий (дефис, пробел), ставим курсор после него
+                if (i + 1 < newValue.length && /\D/.test(newValue[i + 1])) {
+                    return i + 2
+                }
+                return i + 1
+            }
+        }
+    }
+    
+    // Если не нашли (все цифры были удалены), возвращаем конец строки
+    return newValue.length
+}
+
+/**
  * Валидация номера телефона
  * Проверяет формат +7 (XXX) XXX-XX-XX
  */
 export const phonePattern = '^\\+7\\s?\\(\\d{3}\\)\\s?\\d{3}-\\d{2}-\\d{2}$'
+
+/**
+ * Форматирует серию паспорта в формат XXXX (4 цифры)
+ * @param value - Введенное значение
+ * @returns Отформатированная серия паспорта
+ */
+export function formatPassportSerial(value: string): string {
+    // Удаляем все символы кроме цифр
+    const numbers = value.replace(/\D/g, '')
+    
+    // Ограничиваем до 4 цифр
+    return numbers.slice(0, 4)
+}
+
+/**
+ * Форматирует номер паспорта в формат XXXXXX (6 цифр)
+ * @param value - Введенное значение
+ * @returns Отформатированный номер паспорта
+ */
+export function formatPassportNumber(value: string): string {
+    // Удаляем все символы кроме цифр
+    const numbers = value.replace(/\D/g, '')
+    
+    // Ограничиваем до 6 цифр
+    return numbers.slice(0, 6)
+}
+
+/**
+ * Вычисляет новую позицию курсора для паспортных данных
+ * @param oldValue - Старое значение
+ * @param newValue - Новое отформатированное значение
+ * @param oldCursorPosition - Старая позиция курсора
+ * @returns Новая позиция курсора
+ */
+export function calculatePassportCursorPosition(
+    oldValue: string,
+    newValue: string,
+    oldCursorPosition: number,
+): number {
+    // Если новое значение пустое, курсор в начале
+    if (!newValue) {
+        return 0
+    }
+    
+    // Подсчитываем количество цифр до позиции курсора в старом значении
+    const digitsBeforeCursor = oldValue
+        .slice(0, oldCursorPosition)
+        .replace(/\D/g, '').length
+    
+    // Если цифр нет, курсор в начале
+    if (digitsBeforeCursor === 0) {
+        return 0
+    }
+    
+    // Находим позицию в новом значении, где находится эта же цифра
+    let digitCount = 0
+    for (let i = 0; i < newValue.length; i++) {
+        if (/\d/.test(newValue[i])) {
+            digitCount++
+            // Если достигли нужного количества цифр, ставим курсор после этой цифры
+            if (digitCount === digitsBeforeCursor) {
+                return i + 1
+            }
+        }
+    }
+    
+    // Если не нашли (все цифры были удалены), возвращаем конец строки
+    return newValue.length
+}
+
+/**
+ * Валидация СНИЛС
+ * Проверяет формат XXX-XXX-XXX XX
+ */
+export const snilsPattern = '^\\d{3}-\\d{3}-\\d{3}\\s\\d{2}$'
+
+/**
+ * Валидация серии паспорта
+ * Проверяет формат XXXX (4 цифры)
+ */
+export const passportSerialPattern = '^\\d{4}$'
+
+/**
+ * Валидация номера паспорта
+ * Проверяет формат XXXXXX (6 цифр)
+ */
+export const passportNumberPattern = '^\\d{6}$'

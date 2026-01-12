@@ -34,24 +34,20 @@ export function IndividualClientForm({
             />
 
             <FormField
-                type='number'
                 label="Паспорт серия"
                 path={`${basePath}.passportSerial`}
                 updateCommon={updateCommon}
                 placeholder="0000"
-                maxLength={4}
-                minLength={4}
+                pattern="^\d{4}$"
                 required
             />
 
             <FormField
-                type='number'
                 label="Паспорт номер"
                 path={`${basePath}.passportNumber`}
                 updateCommon={updateCommon}
                 placeholder="000000"
-                maxLength={6}
-                minLength={6}
+                pattern="^\d{6}$"
                 required
             />
 
@@ -83,13 +79,11 @@ export function IndividualClientForm({
             />
 
             <FormField
-                type='number'
                 label="СНИЛС"
                 path={`${basePath}.snils`}
                 updateCommon={updateCommon}
                 placeholder="123-456-789 00"
-                maxLength={11}
-                minLength={11}
+                pattern="^\d{3}-\d{3}-\d{3}\s\d{2}$"
                 required
             />
 

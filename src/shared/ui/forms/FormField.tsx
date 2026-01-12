@@ -5,7 +5,15 @@
 import { Input } from '@/shared/ui/input'
 import { Field, FieldLabel, FieldDescription } from '@/shared/ui/field'
 import type { UpdateFormFn } from '@/shared/lib/form-utils'
-import { formatPhoneNumber, calculateCursorPosition } from '@/shared/lib/phone-mask'
+import { 
+    formatPhoneNumber, 
+    calculateCursorPosition,
+    formatSnils,
+    calculateSnilsCursorPosition,
+    formatPassportSerial,
+    formatPassportNumber,
+    calculatePassportCursorPosition
+} from '@/shared/lib/phone-mask'
 
 interface FormFieldProps {
     label: string
@@ -73,11 +81,12 @@ export function FormField({
                     }
                 }}
                 onInput={(e) => {
+                    const input = e.target as HTMLInputElement
+                    const oldValue = input.value
+                    const cursorPosition = input.selectionStart || 0
+                    
                     // Применяем маску для телефона
                     if (type === 'tel') {
-                        const input = e.target as HTMLInputElement
-                        const oldValue = input.value
-                        const cursorPosition = input.selectionStart || 0
                         const formatted = formatPhoneNumber(oldValue)
                         
                         // Вычисляем новую позицию курсора с учетом форматирования
@@ -94,10 +103,69 @@ export function FormField({
                         updateCommon(path, formatted)
                         onChangeCallback?.()
                     }
+                    // Применяем маску для СНИЛС (определяем по path)
+                    else if (path.includes('snils')) {
+                        const formatted = formatSnils(oldValue)
+                        
+                        // Вычисляем новую позицию курсора с учетом форматирования
+                        const newCursorPosition = calculateSnilsCursorPosition(
+                            oldValue,
+                            formatted,
+                            cursorPosition,
+                        )
+                        
+                        input.value = formatted
+                        input.setSelectionRange(newCursorPosition, newCursorPosition)
+
+                        // Обновляем значение в форме
+                        updateCommon(path, formatted)
+                        onChangeCallback?.()
+                    }
+                    // Применяем маску для серии паспорта (определяем по path)
+                    else if (path.includes('passportSerial')) {
+                        const formatted = formatPassportSerial(oldValue)
+                        
+                        // Вычисляем новую позицию курсора
+                        const newCursorPosition = calculatePassportCursorPosition(
+                            oldValue,
+                            formatted,
+                            cursorPosition,
+                        )
+                        
+                        input.value = formatted
+                        input.setSelectionRange(newCursorPosition, newCursorPosition)
+
+                        // Обновляем значение в форме
+                        updateCommon(path, formatted)
+                        onChangeCallback?.()
+                    }
+                    // Применяем маску для номера паспорта (определяем по path)
+                    else if (path.includes('passportNumber')) {
+                        const formatted = formatPassportNumber(oldValue)
+                        
+                        // Вычисляем новую позицию курсора
+                        const newCursorPosition = calculatePassportCursorPosition(
+                            oldValue,
+                            formatted,
+                            cursorPosition,
+                        )
+                        
+                        input.value = formatted
+                        input.setSelectionRange(newCursorPosition, newCursorPosition)
+
+                        // Обновляем значение в форме
+                        updateCommon(path, formatted)
+                        onChangeCallback?.()
+                    }
                 }}
                 onChange={(e) => {
-                    // Для телефона onChange уже обработан в onInput
-                    if (type !== 'tel') {
+                    // Для телефона, СНИЛС и паспортных данных onChange уже обработан в onInput
+                    if (
+                        type !== 'tel' && 
+                        !path.includes('snils') && 
+                        !path.includes('passportSerial') && 
+                        !path.includes('passportNumber')
+                    ) {
                         const value = parseAsNumber
                             ? +e.target.value
                             : e.target.value
