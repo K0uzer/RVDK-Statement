@@ -22,7 +22,7 @@ export function GovClientForm({
                 label="Полное наименование органа"
                 path={`${basePath}.nameFull`}
                 updateCommon={updateCommon}
-                placeholder="Администрация города Ростова-на-Дону"
+                placeholder="Администрация г. Ростова-на-Дону"
                 required
                 onChangeCallback={onFirstFieldFilled}
             />
@@ -65,7 +65,8 @@ export function GovClientForm({
                 path={`${basePath}.phoneNumber`}
                 updateCommon={updateCommon}
                 type="tel"
-                placeholder="+7 863 240-00-00"
+                placeholder="+7 (XXX) XXX-XX-XX"
+                pattern="^\+7\s?\(\d{3}\)\s?\d{3}-\d{2}-\d{2}$"
                 required
             />
 

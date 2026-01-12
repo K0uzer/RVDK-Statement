@@ -5,6 +5,7 @@
 import { Input } from '@/shared/ui/input'
 import { Field, FieldLabel, FieldDescription } from '@/shared/ui/field'
 import type { UpdateFormFn } from '@/shared/lib/form-utils'
+import { formatPhoneNumber, calculateCursorPosition } from '@/shared/lib/phone-mask'
 
 interface FormFieldProps {
     label: string
@@ -19,6 +20,7 @@ interface FormFieldProps {
     parseAsNumber?: boolean
     maxLength?: number
     minLength?: number
+    pattern?: string
 }
 
 export function FormField({
@@ -33,7 +35,8 @@ export function FormField({
     onChangeCallback,
     parseAsNumber = false,
     maxLength,
-    minLength
+    minLength,
+    pattern
 }: FormFieldProps) {
     return (
         <Field>
@@ -48,12 +51,59 @@ export function FormField({
                 min={min}
                 maxLength={maxLength}
                 minLength={minLength}
+                pattern={pattern}
+                onKeyDown={(e) => {
+                    // Для телефона: если пользователь вводит 8 в начале, заменяем на 7
+                    if (type === 'tel' && e.key === '8') {
+                        const input = e.target as HTMLInputElement
+                        const digitsOnly = input.value.replace(/\D/g, '')
+                        
+                        // Если поле пустое или только форматирующие символы, заменяем 8 на 7
+                        if (digitsOnly.length === 0) {
+                            e.preventDefault()
+                            // Вставляем +7 вместо 8
+                            const newValue = input.value + '7'
+                            const formatted = formatPhoneNumber(newValue)
+                            input.value = formatted
+                            const cursorPos = calculateCursorPosition(newValue, formatted, formatted.length)
+                            input.setSelectionRange(cursorPos, cursorPos)
+                            updateCommon(path, formatted)
+                            onChangeCallback?.()
+                        }
+                    }
+                }}
+                onInput={(e) => {
+                    // Применяем маску для телефона
+                    if (type === 'tel') {
+                        const input = e.target as HTMLInputElement
+                        const oldValue = input.value
+                        const cursorPosition = input.selectionStart || 0
+                        const formatted = formatPhoneNumber(oldValue)
+                        
+                        // Вычисляем новую позицию курсора с учетом форматирования
+                        const newCursorPosition = calculateCursorPosition(
+                            oldValue,
+                            formatted,
+                            cursorPosition,
+                        )
+                        
+                        input.value = formatted
+                        input.setSelectionRange(newCursorPosition, newCursorPosition)
+
+                        // Обновляем значение в форме
+                        updateCommon(path, formatted)
+                        onChangeCallback?.()
+                    }
+                }}
                 onChange={(e) => {
-                    const value = parseAsNumber
-                        ? +e.target.value
-                        : e.target.value
-                    updateCommon(path, value)
-                    onChangeCallback?.()
+                    // Для телефона onChange уже обработан в onInput
+                    if (type !== 'tel') {
+                        const value = parseAsNumber
+                            ? +e.target.value
+                            : e.target.value
+                        updateCommon(path, value)
+                        onChangeCallback?.()
+                    }
                 }}
             />
             {description && <FieldDescription>{description}</FieldDescription>}
