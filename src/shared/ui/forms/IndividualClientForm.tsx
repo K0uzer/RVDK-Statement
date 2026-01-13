@@ -88,6 +88,7 @@ export function IndividualClientForm({
             />
 
             <FormField
+                type='text'
                 label="Адрес регистрации"
                 path={`${basePath}.address`}
                 updateCommon={updateCommon}
@@ -96,6 +97,7 @@ export function IndividualClientForm({
             />
 
             <FormField
+                type='text'
                 label="Почтовый адрес"
                 path={`${basePath}.postalAddress`}
                 updateCommon={updateCommon}

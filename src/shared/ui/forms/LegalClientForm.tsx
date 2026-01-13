@@ -47,13 +47,11 @@ export function LegalClientForm({
             />
 
             <FormField
-                type='number'
                 label="ИНН"
                 path={`${basePath}.inn`}
                 updateCommon={updateCommon}
                 placeholder="1234567890"
                 pattern="^\d{10}$"
-                maxLength={10}
                 required
             />
 

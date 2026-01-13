@@ -5,8 +5,8 @@
 import { Input } from '@/shared/ui/input'
 import { Field, FieldLabel, FieldDescription } from '@/shared/ui/field'
 import type { UpdateFormFn } from '@/shared/lib/form-utils'
-import { 
-    formatPhoneNumber, 
+import {
+    formatPhoneNumber,
     calculateCursorPosition,
     formatSnils,
     calculateSnilsCursorPosition,
@@ -61,11 +61,12 @@ export function FormField({
                 minLength={minLength}
                 pattern={pattern}
                 onKeyDown={(e) => {
+
                     // Для телефона: если пользователь вводит 8 в начале, заменяем на 7
                     if (type === 'tel' && e.key === '8') {
                         const input = e.target as HTMLInputElement
                         const digitsOnly = input.value.replace(/\D/g, '')
-                        
+
                         // Если поле пустое или только форматирующие символы, заменяем 8 на 7
                         if (digitsOnly.length === 0) {
                             e.preventDefault()
@@ -84,18 +85,37 @@ export function FormField({
                     const input = e.target as HTMLInputElement
                     const oldValue = input.value
                     const cursorPosition = input.selectionStart || 0
-                    
+
                     // Применяем маску для телефона
                     if (type === 'tel') {
                         const formatted = formatPhoneNumber(oldValue)
-                        
+
                         // Вычисляем новую позицию курсора с учетом форматирования
                         const newCursorPosition = calculateCursorPosition(
                             oldValue,
                             formatted,
                             cursorPosition,
                         )
-                        
+
+                        input.value = formatted
+                        input.setSelectionRange(newCursorPosition, newCursorPosition)
+
+                        // Обновляем значение в форме
+                        updateCommon(path, formatted)
+                        onChangeCallback?.()
+                    }
+                    // Обработка ИНН: оставляем только цифры
+                    else if (path.includes('inn')) {
+                        // Удаляем все нецифровые символы
+                        const formatted = oldValue.replace(/\D/g, '')
+
+                        // Вычисляем новую позицию курсора
+                        // Считаем количество нецифровых символов до текущей позиции курсора
+                        const nonDigitsBeforeCursor = oldValue
+                            .substring(0, cursorPosition)
+                            .replace(/\d/g, '').length
+                        const newCursorPosition = Math.max(0, cursorPosition - nonDigitsBeforeCursor)
+
                         input.value = formatted
                         input.setSelectionRange(newCursorPosition, newCursorPosition)
 
@@ -106,14 +126,14 @@ export function FormField({
                     // Применяем маску для СНИЛС (определяем по path)
                     else if (path.includes('snils')) {
                         const formatted = formatSnils(oldValue)
-                        
+
                         // Вычисляем новую позицию курсора с учетом форматирования
                         const newCursorPosition = calculateSnilsCursorPosition(
                             oldValue,
                             formatted,
                             cursorPosition,
                         )
-                        
+
                         input.value = formatted
                         input.setSelectionRange(newCursorPosition, newCursorPosition)
 
@@ -124,14 +144,14 @@ export function FormField({
                     // Применяем маску для серии паспорта (определяем по path)
                     else if (path.includes('passportSerial')) {
                         const formatted = formatPassportSerial(oldValue)
-                        
+
                         // Вычисляем новую позицию курсора
                         const newCursorPosition = calculatePassportCursorPosition(
                             oldValue,
                             formatted,
                             cursorPosition,
                         )
-                        
+
                         input.value = formatted
                         input.setSelectionRange(newCursorPosition, newCursorPosition)
 
@@ -142,14 +162,14 @@ export function FormField({
                     // Применяем маску для номера паспорта (определяем по path)
                     else if (path.includes('passportNumber')) {
                         const formatted = formatPassportNumber(oldValue)
-                        
+
                         // Вычисляем новую позицию курсора
                         const newCursorPosition = calculatePassportCursorPosition(
                             oldValue,
                             formatted,
                             cursorPosition,
                         )
-                        
+
                         input.value = formatted
                         input.setSelectionRange(newCursorPosition, newCursorPosition)
 
@@ -159,11 +179,12 @@ export function FormField({
                     }
                 }}
                 onChange={(e) => {
-                    // Для телефона, СНИЛС и паспортных данных onChange уже обработан в onInput
+                    // Для телефона, ИНН, СНИЛС и паспортных данных onChange уже обработан в onInput
                     if (
-                        type !== 'tel' && 
-                        !path.includes('snils') && 
-                        !path.includes('passportSerial') && 
+                        type !== 'tel' &&
+                        !path.includes('inn') &&
+                        !path.includes('snils') &&
+                        !path.includes('passportSerial') &&
                         !path.includes('passportNumber')
                     ) {
                         const value = parseAsNumber

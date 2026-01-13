@@ -55,7 +55,6 @@ export function IPClientForm({
             />
 
             <FormField
-                type='number'
                 label="ИНН"
                 path={`${basePath}.inn`}
                 updateCommon={updateCommon}

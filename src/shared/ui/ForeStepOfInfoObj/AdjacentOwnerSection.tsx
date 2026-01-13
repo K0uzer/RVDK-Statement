@@ -77,7 +77,6 @@ export function AdjacentOwnerSection({
                         placeholder="Адрес участка"
                     />
                     <Input
-                        type='number'
                         onChange={(e) => {
                             updateCommon(
                                 'objectiveInfo.coOwnerLegal.inn',
@@ -88,6 +87,7 @@ export function AdjacentOwnerSection({
                         pattern="^\d{12}$"
                         maxLength={10}
                         minLength={10}
+                        min={10}
                     />
                 </Field>
             </>
